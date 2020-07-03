@@ -36,10 +36,14 @@ This example runs walks the filesystem and summarizes owners and their correspon
 
 `python qwalk.py -s product.eng.qumulo.com -d / -c ChangeExtension`
 
-This example runs walks the filesystem and looks for a file extension of your specification. If it finds that extension, it will log the potential rename operation. If you add the `-g` flag, it will rename the file.
+This example runs walks the filesystem and looks for a file extension of your specification. If it finds that extension, it will log the potential rename operation. This will not make *any* changes to your filesystem! If you add the `-g` flag, it will rename the file.
 
 
-## Working with "each_file"
+## Working with the `every_batch` method
+
+Any walk of the filesystem will involve handling lots of files and directories. Each one of those items can be handled in the `every_batch` method. With `every_batch` there is a list of items called the "file_list". There is also a worker object that allows for handling locks, writing to files, and other solutions.
+
+Each item in the `file_list` array has the following properties:
 
 `{
  'dir_id': '5160036463',
@@ -75,3 +79,4 @@ This example runs walks the filesystem and looks for a file extension of your sp
  'major_minor_numbers': {'major': 0, 'minor': 0},
 }
 `
+

@@ -13,9 +13,9 @@ try:
 except:
     pass
 
-MAX_QUEUE_LENGTH = 20000
+MAX_QUEUE_LENGTH = 10000000
 BATCH_SIZE = 5000
-MAX_WORKER_COUNT = 50
+MAX_WORKER_COUNT = 96
 
 def log_it(msg):
     print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
