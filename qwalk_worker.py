@@ -19,7 +19,7 @@ def log_it(msg):
 
 class QWalkWorker:
     def __init__(self, creds, funcy, worker_count, start_path, make_changes, log_file):
-        self.max_queue_len = multiprocessing.Value("i", 10000000)
+        self.max_queue_len = multiprocessing.Value("i", 1000)
         self.o_start_time = time.time()
         self.creds = creds
         self.funcy = funcy
@@ -85,7 +85,8 @@ class QWalkWorker:
 
         if os.path.exists("new-queue.txt"):
             os.rename("new-queue.txt", "old-queue.txt")
-            self.__init__(self.creds, self.funcy, self.worker_count)
+            self.__init__(self.creds, self.funcy, self.worker_count,
+                          self.start_path, self.MAKE_CHANGES, self.LOG_FILE_NAME)
             self.run()
 
     def print_status(self):
