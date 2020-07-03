@@ -19,7 +19,7 @@ def log_it(msg):
 
 class QWalkWorker:
     def __init__(self, creds, funcy, worker_count, start_path, make_changes, log_file):
-        self.max_queue_len = multiprocessing.Value("i", 1000)
+        self.max_queue_len = multiprocessing.Value("i", 10000000)
         self.o_start_time = time.time()
         self.creds = creds
         self.funcy = funcy
