@@ -5,6 +5,8 @@ import time
 import traceback
 import multiprocessing
 from qumulo.rest_client import RestClient
+from qumulo.lib.request import RequestError
+
 try:
     import queue # python2/3
 except:
@@ -157,6 +159,12 @@ class QWalkWorker:
                     res = ww.rc.request('GET', next_uri)
                 else:
                     break
+            except RequestError as e:
+                # handle API errors, usually it's the 10 hour expiration.
+                time.sleep(5)
+                log_it("401 HTTP API error: %s" % re.sub(r'[\r\n]+', ' ', str(e))[:100])
+                ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+                continue
             except:
                 break
             for dd in res['files']:

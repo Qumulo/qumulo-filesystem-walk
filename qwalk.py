@@ -20,6 +20,8 @@ def each_file(file_obj, work_obj):
                                   )
         return "%s: %s -> %s" % (dir_name, from_file_name, to_file_name)
 
+#################### the only thing you'll need to change is above ####################
+
 
 def each_directory(file_list, work_obj):
     results = []
