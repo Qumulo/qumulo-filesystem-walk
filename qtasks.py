@@ -67,6 +67,8 @@ class SummarizeOwners:
 
     @staticmethod
     def work_done(work_obj):
+        print("")
+        print("-"*80)
         fr = open(SummarizeOwners.FILE_NAME, "r")
         owners = {}
         for line in fr:
@@ -82,7 +84,7 @@ class SummarizeOwners:
         for k, v in owners.items():
             print("%(owner)12s (%(id_type)10s/%(id_value)48s): %(count)9s / %(size)15s" % v)
         os.remove(SummarizeOwners.FILE_NAME)
-
+        print("-"*80)
 
     @staticmethod
     def work_start(work_obj):
