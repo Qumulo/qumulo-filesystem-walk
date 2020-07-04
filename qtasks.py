@@ -31,7 +31,7 @@ class ChangeExtension:
 
         if len(results) > 0:
             with work_obj.result_file_lock:
-                fw = open(work_obj.LOG_FILE_NAME, "a")
+                fw = io.open(work_obj.LOG_FILE_NAME, "a", encoding='utf8')
                 for d in results:
                     fw.write("%s\n" % d)
                 fw.close()
@@ -61,7 +61,7 @@ class SummarizeOwners:
                 owners[k]["count"] += 1
                 owners[k]["size"] += int(file_obj['size'])
         with work_obj.result_file_lock:
-            fw = open(SummarizeOwners.FILE_NAME, "a")
+            fw = io.open(SummarizeOwners.FILE_NAME, "a", encoding='utf8')
             for k, v in owners.items():
                 fw.write("%s|%s|%s\n" % (k, v["count"], v["size"]))
             fw.close()
@@ -72,7 +72,7 @@ class SummarizeOwners:
     def work_done(work_obj):
         print("")
         print("-"*80)
-        fr = open(SummarizeOwners.FILE_NAME, "r")
+        fr = io.open(SummarizeOwners.FILE_NAME, "r", encoding='utf8')
         owners = {}
         for line in fr:
             (owner, id_type, id_value, count, size) = line.split('|')
@@ -152,7 +152,7 @@ class DataReductionTest:
                     action_count = 0
 
         with work_obj.result_file_lock:
-            fw = open(DataReductionTest.FILE_NAME, "a")
+            fw = io.open(DataReductionTest.FILE_NAME, "a", encoding='utf8')
             for line in res:
                 fw.write(line + "\n")
             fw.close()
@@ -181,7 +181,7 @@ class ModeBitsChecker:
             if file_obj["mode"][1] == '0':
                 mb_res.append("%(mode)s - %(path)s" % file_obj)
         with work_obj.result_file_lock:
-            fw = open(ModeBitsChecker.FILE_NAME, "a")
+            fw = io.open(ModeBitsChecker.FILE_NAME, "a", encoding='utf8')
             for line in mb_res:
                 fw.write(line + "\n")
             fw.close()
