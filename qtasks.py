@@ -1,5 +1,8 @@
 import re
 import os
+import io
+import zlib
+import math
 
 
 class ChangeExtension:
@@ -90,3 +93,93 @@ class SummarizeOwners:
     def work_start(work_obj):
         if os.path.exists(SummarizeOwners.FILE_NAME):
             os.remove(SummarizeOwners.FILE_NAME)
+
+
+class DataReductionTest:
+    FILE_NAME = "data-reduction-test-results.txt"
+
+    @staticmethod
+    def compress_it(work_obj, file_id, offset):
+        fw = io.BytesIO()
+        work_obj.rc.fs.read_file(file_ = fw, 
+                                 id_ = file_id, 
+                                 offset = offset, 
+                                 length = 4096)
+        fw.seek(0)
+        c_len = len(zlib.compress(fw.read(), 4))
+        c_level = int(round(10 * c_len / 4096.0, 0))
+        if c_level == 10:
+            c_level = 9
+        return c_level
+
+    @staticmethod
+    def every_batch(file_list, work_obj):
+        res = []
+        action_count = 0
+        for file_obj in file_list:
+            if file_obj["type"] == 'FS_FILE_TYPE_FILE':
+                action_count += 1
+                file_size = int(file_obj['size'])
+                c_start = DataReductionTest.compress_it(work_obj, file_obj["id"], 0)
+                c_end = 'x'
+                c_middle = 'x'
+                if file_size > 4096*2:
+                    c_end = DataReductionTest.compress_it(work_obj, file_obj["id"]
+                                                            , file_size-4096)
+                if file_size > 4096*3:
+                    c_middle = DataReductionTest.compress_it(work_obj, file_obj["id"]
+                                        , math.floor((file_size/2.0)/4096)*4096)
+                res.append("%s%s%s|%s" % (c_start, c_middle, c_end
+                                     , file_obj['name'].rpartition('.')[-1]))
+                if action_count > 100:
+                    with work_obj.result_file_lock:
+                        work_obj.action_count.value += action_count
+                    action_count = 0
+
+
+        with work_obj.result_file_lock:
+            fw = open(DataReductionTest.FILE_NAME, "a")
+            for line in res:
+                fw.write(line + "\n")
+            fw.close()
+            work_obj.action_count.value += action_count
+        return None
+
+    @staticmethod
+    def work_start(work_obj):
+        if os.path.exists(DataReductionTest.FILE_NAME):
+            os.remove(DataReductionTest.FILE_NAME)
+
+    @staticmethod
+    def work_done(work_obj):
+        return
+
+
+class ModeBitsChecker:
+    FILE_NAME = "mode-bits-log.txt"
+
+    @staticmethod
+    def every_batch(file_list, work_obj):
+        res = []
+        action_count = 0
+        mb_res = []
+        for file_obj in file_list:
+            if file_obj["mode"][1] == '0':
+                mb_res.append("%(mode)s - %(path)s" % file_obj)
+        with work_obj.result_file_lock:
+            fw = open(ModeBitsChecker.FILE_NAME, "a")
+            for line in mb_res:
+                fw.write(line + "\n")
+            fw.close()
+            work_obj.action_count.value += action_count
+        return None
+
+    @staticmethod
+    def work_start(work_obj):
+        if os.path.exists(ModeBitsChecker.FILE_NAME):
+            os.remove(ModeBitsChecker.FILE_NAME)
+
+    @staticmethod
+    def work_done(work_obj):
+        return
+

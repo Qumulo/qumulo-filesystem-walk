@@ -45,7 +45,7 @@ Any walk of the filesystem will involve handling lots of files and directories. 
 
 Each item in the `file_list` array has the following properties:
 
-`{
+```{
  'dir_id': '5160036463',
  'type': 'FS_FILE_TYPE_FILE'
  'id': '5158036745',
@@ -78,5 +78,5 @@ Each item in the `file_list` array has the following properties:
  'directory_entry_hash_policy': None,
  'major_minor_numbers': {'major': 0, 'minor': 0},
 }
-`
+```
 
