@@ -232,8 +232,11 @@ class QWalkWorker:
             except RequestError as e:
                 # handle API errors, usually it's the 10 hour expiration.
                 time.sleep(5)
-                log_it("401 HTTP API error: %s" % re.sub(r'[\r\n]+', ' ', str(e))[:100])
-                ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+                if '404' in str(e):
+                    next_uri = 'directory_deleted'
+                else:
+                    log_it("HTTP API error: %s" % re.sub(r'[\r\n]+', ' ', str(e))[:100])
+                    ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
                 continue
             except:
                 print("EXCEPTION!")
