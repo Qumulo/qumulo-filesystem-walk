@@ -3,7 +3,7 @@ import os
 import io
 import zlib
 import math
-
+import random
 
 class ChangeExtension:
 
@@ -118,24 +118,35 @@ class DataReductionTest:
         action_count = 0
         for file_obj in file_list:
             if file_obj["type"] == 'FS_FILE_TYPE_FILE':
+                # sample 5% of files
+                if random.random() < 0.95:
+                    continue
                 action_count += 1
                 file_size = int(file_obj['size'])
-                c_start = DataReductionTest.compress_it(work_obj, file_obj["id"], 0)
+                try:
+                    c_start = DataReductionTest.compress_it(work_obj, file_obj["id"], 0)
+                except:
+                    continue
                 c_end = 'x'
                 c_middle = 'x'
                 if file_size > 4096*2:
-                    c_end = DataReductionTest.compress_it(work_obj, file_obj["id"]
-                                                            , file_size-4096)
+                    try:
+                        c_end = DataReductionTest.compress_it(work_obj, file_obj["id"]
+                                                                , file_size-4096)
+                    except:
+                        continue
                 if file_size > 4096*3:
-                    c_middle = DataReductionTest.compress_it(work_obj, file_obj["id"]
+                    try:
+                        c_middle = DataReductionTest.compress_it(work_obj, file_obj["id"]
                                         , math.floor((file_size/2.0)/4096)*4096)
+                    except:
+                        continue
                 res.append("%s%s%s|%s" % (c_start, c_middle, c_end
                                      , file_obj['name'].rpartition('.')[-1]))
                 if action_count > 100:
                     with work_obj.result_file_lock:
                         work_obj.action_count.value += action_count
                     action_count = 0
-
 
         with work_obj.result_file_lock:
             fw = open(DataReductionTest.FILE_NAME, "a")
