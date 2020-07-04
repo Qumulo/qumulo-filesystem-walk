@@ -141,8 +141,11 @@ class DataReductionTest:
                                         , math.floor((file_size/2.0)/4096)*4096)
                     except:
                         continue
-                res.append("%s%s%s|%s" % (c_start, c_middle, c_end
-                                     , file_obj['name'].rpartition('.')[-1]))
+                ext = file_obj['name'].rpartition('.')[-1]
+                ext = ext.encode('ascii', 'ignore')
+                if len(ext) > 6:
+                    ext = ext[0:6]
+                res.append("%s%s%s|%s" % (c_start, c_middle, c_end, ext))
                 if action_count > 100:
                     with work_obj.result_file_lock:
                         work_obj.action_count.value += action_count

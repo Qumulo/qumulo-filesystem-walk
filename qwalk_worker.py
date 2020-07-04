@@ -14,7 +14,7 @@ except:
     pass
 
 MAX_QUEUE_LENGTH = 10000000
-BATCH_SIZE = 5000
+BATCH_SIZE = 2000
 MAX_WORKER_COUNT = 96
 
 def log_it(msg):
