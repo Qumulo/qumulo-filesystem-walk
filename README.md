@@ -2,17 +2,21 @@
 
 Walk a Qumulo filesystem, perform actions with highly parallelized python
 
+
 ## Requirements
 
-* MacOSX - python 2.7.16 + 3.7.7
-* Linux  - python 2.7.15 + 3.7.6
+* MacOSX - python 3.7.7
+* Linux  - python 3.7.6
+* It might work with python 2.7.15 or so, but this is not tested.
 * Qumulo API python bindings `pip install -r requirements.txt`
+
 
 
 ## How it works
 
 This is approach is designed to handle billions of files and directories. Because billions of files and directories is a lot there are a number of optimizations added to this tool, including:
 
+* Plugin a variety of "classes" to support different actions
 * Ability to run on only a specified subdirectory
 * Leverage all Qumulo cluster nodes for extra power
 * Multiprocessing queue to leverage Qumulo's scale and performance
@@ -23,27 +27,64 @@ This is approach is designed to handle billions of files and directories. Becaus
 * Batch up small sets of files and directories when possible
 
 
+
 ## How fast it is?
 
-It can read over 150,000 files per second and up to 6,000 directories per second. Generally, the script is more bound by number of directories than number of files. If there are things happening with each file that you add into the `each_file` method, you will very likely end up limited by the client cpu.
+It can read over 150,000 files per second and up to 6,000 directories per second. Generally, the script is more bound by number of directories than number of files. If there are things happening with each file that you add into the `each_file` method, you will very likely end up limited by the client cpu and you won't be able to achieve 150,000 files per second or 6,000 directories per second.
 
 
-## Examples
+
+## What can I do with the qwalk.py tool?
+
+
+### Summarize owners of filesystem capacity
 
 `python qwalk.py -s product.eng.qumulo.com -d / -c SummarizeOwners`
 
-This example runs walks the filesystem and summarizes owners and their corresponding file count and capacity utilization.
-
-`python qwalk.py -s product.eng.qumulo.com -d / -c ChangeExtension`
-
-This example runs walks the filesystem and looks for a file extension of your specification. If it finds that extension, it will log the potential rename operation. This will not make *any* changes to your filesystem! If you add the `-g` flag, it will rename the file.
+This example walks the filesystem and summarizes owners and their corresponding file count and capacity utilization.
 
 
-## Working with the `every_batch` method
+### Change the file extension names for certain files
 
-Any walk of the filesystem will involve handling lots of files and directories. Each one of those items can be handled in the `every_batch` method. With `every_batch` there is a list of items called the "file_list". There is also a worker object that allows for handling locks, writing to files, and other solutions.
+`python qwalk.py -s product.eng.qumulo.com -d / -c ChangeExtension --from jpeg --to jpg`
 
-Each item in the `file_list` array has the following properties:
+This example walks the filesystem, searches for files ending with ".jpeg" and then logs what files would be changed. If you want to make the changes, run the script with the added `-g` argument. 
+
+
+### Search filesystem paths and names by regular expression or string
+
+`python qwalk.py -s product.eng.qumulo.com -d / -c Search --str password`
+
+Search for files with the exact string 'password' in the path or name. Look for the output in `output-walk-log.txt` in the same directory.
+
+`python qwalk.py -s product.eng.qumulo.com -d / -c Search --re ".*passw[or]*d.*"`
+
+Case-insensitive search for files with the string 'password' or 'passwd' in the path or name.
+Look for the output in `output-walk-log.txt` in the same directory.
+
+
+### Examine contents of files to check for data reduction potential
+
+`python qwalk.py -s product.eng.qumulo.com -d / -c DataReductionTest --perc 0.01`
+
+Walk the filesystem and open a random 1% of files (--perc 0.01) and use zlib.compress to verify how compressible the data in the file is. This class will only attempt to compress, at most, 12288 bytes in each file. Because each examined requires multiple operations, this can be slower than the other current walk classes.
+
+
+### POSIX mode bits where the owner has no rights to the file or directory.
+
+`python qwalk.py -s product.eng.qumulo.com -d / -c ModeBitsChecker`
+
+This will look at the metadata on each file and write any results to a file where the file or directory looks like '0\*\*' on the mode bits.
+
+
+
+## Building qtask classes
+
+Any walk of the filesystem will involve handling lots of files and directories. It also can involve a lot of different functionality and code. The qtask classes are where this functionality can be built. Above we have a number of classes currently built, but for those that know a bit of code, they can create their own classes or modify existing classes to meet their functional needs.
+
+See the current imlementations in qtask.py to figure out how to build your own approach.
+
+For a bit of context that can help, below you will find the metadata that we have with each file inside of the `every_batch` method.
 
 ```{
  'dir_id': '5160036463',
@@ -79,4 +120,6 @@ Each item in the `file_list` array has the following properties:
  'major_minor_numbers': {'major': 0, 'minor': 0},
 }
 ```
+
+Additional data can be extracted per file, such as acls, alternate data streams, and other details. That additional data will require additional API calls, and will slow down the walk.
 

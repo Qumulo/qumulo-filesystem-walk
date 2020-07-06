@@ -16,7 +16,7 @@ class Search:
         self.search_str = None
         self.search_re = None
         if args.search_re:
-            self.search_re = re.compile(args.search_re)
+            self.search_re = re.compile(args.search_re, re.IGNORECASE)
         if args.search_str:
             self.search_str = args.search_str
 
@@ -153,7 +153,7 @@ class DataReductionTest:
         args = parser.parse_args(args)
         self.sample_perc = 0.05
         if args.perc:
-            self.sample_perc = int(args.perc)
+            self.sample_perc = float(args.perc)
 
     @staticmethod
     def compress_it(work_obj, file_id, offset):
