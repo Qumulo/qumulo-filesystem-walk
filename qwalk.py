@@ -17,17 +17,20 @@ def main():
     parser.add_argument('-g', help='Run with filesystem changes', action='store_true')
     parser.add_argument('-l', help='Log file',
                               default='output-walk-log.txt')
-    parser.add_argument('-c', help='Class to run')
+    parser.add_argument('-c', help='Class to run. Options include: ' + \
+                             'ChangeExtension, SummarizeOwners, DataReductionTest, ' + \
+                             'ModeBitsChecker'
+                            , required=True)
 
     try:
-        args = parser.parse_args()
+        args, other_args = parser.parse_known_args()
     except:
-        print("-"*60)
+        print("-"*80)
         parser.print_help()
-        print("-"*60)
+        print("-"*80)
         sys.exit(0)
 
-    QWalkWorker.run_all(args)
+    QWalkWorker.run_all(args, other_args)
 
 if __name__ == "__main__":
     main()

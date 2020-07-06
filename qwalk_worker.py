@@ -16,6 +16,8 @@ except:
 MAX_QUEUE_LENGTH = 10000000
 BATCH_SIZE = 2000
 MAX_WORKER_COUNT = 96
+if os.getenv('QWORKERS'):
+    MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
 
 def log_it(msg):
     print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
@@ -162,9 +164,14 @@ class QWalkWorker:
                 ))
 
     @staticmethod
-    def run_all(args):
+    def run_all(args, other_args = None):
+        if other_args:
+            run_class = eval(args.c)(other_args)
+        else:
+            run_class = eval(args.c)
+
         w = QWalkWorker({"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}, 
-                        eval(args.c), 
+                        run_class, 
                         args.d,   # starting directory
                         args.g,
                         args.l,

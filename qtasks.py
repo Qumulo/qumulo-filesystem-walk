@@ -3,14 +3,64 @@ import os
 import io
 import zlib
 import math
+import argparse
 import random
 
+class Search:
+    ARGS = None
+    def __init__(self, args):
+        parser = argparse.ArgumentParser(description='')
+        parser.add_argument('--re', help='', dest="search_re")
+        parser.add_argument('--str', help='', dest="search_str")
+        args = parser.parse_args(args)
+        self.search_str = None
+        self.search_re = None
+        if args.search_re:
+            self.search_re = re.compile(args.search_re)
+        if args.search_str:
+            self.search_str = args.search_str
+
+    @staticmethod
+    def every_batch(file_list, work_obj):
+        results = []
+        for file_obj in file_list:
+            if work_obj.run_class.search_str:
+                if work_obj.run_class.search_str in file_obj['path']:
+                    results.append(file_obj['path'])
+            elif work_obj.run_class.search_re:
+                if work_obj.run_class.search_re.match(file_obj['path']):
+                    results.append(file_obj['path'])
+
+        if len(results) > 0:
+            with work_obj.result_file_lock:
+                fw = io.open(work_obj.LOG_FILE_NAME, "a", encoding='utf8')
+                for d in results:
+                    fw.write("%s\n" % d)
+                fw.close()
+                work_obj.action_count.value += len(results)
+
+    @staticmethod
+    def work_start(work_obj):
+        if os.path.exists(work_obj.LOG_FILE_NAME):
+            os.remove(work_obj.LOG_FILE_NAME)
+
+    @staticmethod
+    def work_done(work_obj):
+        pass
+
+
 class ChangeExtension:
+    ARGS = None
+    def __init__(self, args):
+        parser = argparse.ArgumentParser(description='')
+        parser.add_argument('--from', help='', required=True, dest="ext_from")
+        parser.add_argument('--to', help='', required=True, dest="ext_to")
+        self.ARGS = parser.parse_args(args)
 
     @staticmethod
     def change_extension(file_obj, work_obj):
-        ext_from = ".jpeg"
-        ext_to   = ".jpg"
+        ext_from = work_obj.run_class.ARGS.ext_from
+        ext_to   = work_obj.run_class.ARGS.ext_to
         if file_obj['path'][-len(ext_from):] == ext_from:
             (dir_name, from_file_name) = os.path.split(file_obj['path'])
             to_file_name = from_file_name.replace(ext_from, ext_to)
@@ -70,7 +120,6 @@ class SummarizeOwners:
 
     @staticmethod
     def work_done(work_obj):
-        print("")
         print("-"*80)
         fr = io.open(SummarizeOwners.FILE_NAME, "r", encoding='utf8')
         owners = {}
@@ -98,6 +147,14 @@ class SummarizeOwners:
 class DataReductionTest:
     FILE_NAME = "data-reduction-test-results.txt"
 
+    def __init__(self, args = None):
+        parser = argparse.ArgumentParser(description='')
+        parser.add_argument('--perc', help='', dest="perc")
+        args = parser.parse_args(args)
+        self.sample_perc = 0.05
+        if args.perc:
+            self.sample_perc = int(args.perc)
+
     @staticmethod
     def compress_it(work_obj, file_id, offset):
         fw = io.BytesIO()
@@ -119,7 +176,7 @@ class DataReductionTest:
         for file_obj in file_list:
             if file_obj["type"] == 'FS_FILE_TYPE_FILE':
                 # sample 5% of files
-                if random.random() < 0.95:
+                if random.random() < (1-work_obj.run_class.sample_perc):
                     continue
                 action_count += 1
                 file_size = int(file_obj['size'])
@@ -145,14 +202,14 @@ class DataReductionTest:
                 ext = ext.encode('ascii', 'ignore')
                 if len(ext) > 6:
                     ext = ext[0:6]
-                res.append("%s%s%s|%s" % (c_start, c_middle, c_end, ext))
+                res.append("%s%s%s|%s|%s" % (c_start, c_middle, c_end, ext, file_obj["size"]))
                 if action_count > 100:
                     with work_obj.result_file_lock:
                         work_obj.action_count.value += action_count
                     action_count = 0
 
         with work_obj.result_file_lock:
-            fw = io.open(DataReductionTest.FILE_NAME, "a", encoding='utf8')
+            fw = io.open(DataReductionTest.FILE_NAME, "a+", encoding='utf8')
             for line in res:
                 fw.write(line + "\n")
             fw.close()
