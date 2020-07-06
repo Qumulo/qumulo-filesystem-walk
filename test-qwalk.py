@@ -41,6 +41,7 @@ def main():
         print("-"*80)
         sys.exit(0)
 
+    # Everything will happen in a new subdirectory.
     test_dir_name = 'test-qwalk'
     creds = {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}
     log_it("Log in to: %s" % (args.s))

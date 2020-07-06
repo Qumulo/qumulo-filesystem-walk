@@ -98,6 +98,7 @@ class ChangeExtension:
 
 
 class SummarizeOwners:
+    # A temporary file for storing the intermediate walk work
     FILE_NAME = "owners.txt"
 
     @staticmethod

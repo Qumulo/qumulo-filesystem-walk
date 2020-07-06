@@ -25,6 +25,7 @@ def log_it(msg):
 
 
 class QWalkWorker:
+    # Thie class has gotten a bit too circular/interdependant with qtasks.py
     def get_counters(self):
         return {
             "o_start_time": self.o_start_time,

@@ -23,6 +23,7 @@ def main():
                             , required=True)
 
     try:
+        # Will fail with missing args, but unknown args will all fall through.
         args, other_args = parser.parse_known_args()
     except:
         print("-"*80)
