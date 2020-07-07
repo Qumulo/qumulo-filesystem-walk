@@ -5,9 +5,8 @@ Walk a Qumulo filesystem, perform actions with highly parallelized python
 
 ## Requirements
 
-* MacOSX - python 3.7.7
-* Linux  - python 3.7.6
-* It might work with python 2.7.15 or so, but this is not tested.
+* MacOSX - python 2.7, 3.7 (Tested on 2.7.16 and 3.7.7)
+* Linux  - python 2.7, 3.7 (Tested on 2.7.15 and 3.7.6)
 * Qumulo API python bindings `pip install -r requirements.txt`
 
 
@@ -25,7 +24,7 @@ This is approach is designed to handle billions of files and directories. Becaus
 * Handle API bearer token timeout after 10 hours
 * Break down large directories into smaller chunks
 * Batch up small sets of files and directories when possible
-
+* Works both with Python2 and Python3
 
 
 ## How fast it is?

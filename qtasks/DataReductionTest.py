@@ -66,7 +66,7 @@ class DataReductionTest:
                 if file_size > 4096*3:
                     try:
                         c_middle = DataReductionTest.process_it(work_obj, file_obj["id"]
-                                        , math.floor((file_size/2.0)/4096)*4096, md5)
+                                        , int(math.floor((file_size/2.0)/4096)*4096), md5)
                     except:
                         continue
                 ext = file_obj['name'].rpartition('.')[-1]
