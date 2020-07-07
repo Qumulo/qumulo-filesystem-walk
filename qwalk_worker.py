@@ -7,7 +7,11 @@ import multiprocessing
 from qumulo.rest_client import RestClient
 from qumulo.lib.request import RequestError
 # Import all defined classes
-from qtasks import *
+from qtasks.ChangeExtension import *
+from qtasks.DataReductionTest import *
+from qtasks.ModeBitsChecker import *
+from qtasks.Search import *
+from qtasks.SummarizeOwners import *
 
 try:
     import queue # python2/3

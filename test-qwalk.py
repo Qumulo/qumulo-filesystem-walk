@@ -6,7 +6,12 @@ import time
 import argparse
 from qwalk_worker import QWalkWorker, log_it
 from qumulo.rest_client import RestClient
-from qtasks import *
+from qtasks.ChangeExtension import *
+from qtasks.DataReductionTest import *
+from qtasks.ModeBitsChecker import *
+from qtasks.Search import *
+from qtasks.SummarizeOwners import *
+
 
 LOG_FILE_NAME = 'test-qwalk-log-file.txt'
 
