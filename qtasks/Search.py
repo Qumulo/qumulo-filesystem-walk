@@ -9,13 +9,17 @@ class Search:
         parser = argparse.ArgumentParser(description='')
         parser.add_argument('--re', help='', dest="search_re")
         parser.add_argument('--str', help='', dest="search_str")
+        parser.add_argument('--cols', help='')
         args = parser.parse_args(args)
         self.search_str = None
         self.search_re = None
+        self.cols = ['path']
         if args.search_re:
             self.search_re = re.compile(args.search_re, re.IGNORECASE)
         if args.search_str:
             self.search_str = args.search_str
+        if args.cols:
+            self.cols = args.cols.split(',')
 
     @staticmethod
     def every_batch(file_list, work_obj):
@@ -23,10 +27,12 @@ class Search:
         for file_obj in file_list:
             if work_obj.run_class.search_str:
                 if work_obj.run_class.search_str in file_obj['path']:
-                    results.append(file_obj['path'])
+                    line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
+                    results.append(line)
             elif work_obj.run_class.search_re:
                 if work_obj.run_class.search_re.match(file_obj['path']):
-                    results.append(file_obj['path'])
+                    line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
+                    results.append(line)
 
         if len(results) > 0:
             with work_obj.result_file_lock:
