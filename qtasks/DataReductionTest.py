@@ -3,11 +3,15 @@ import os
 import io
 import zlib
 import math
+import hashlib
 import argparse
 import random
+import codecs
+
 
 class DataReductionTest:
     FILE_NAME = "data-reduction-test-results.txt"
+    sample_perc = 0.05
 
     def __init__(self, args = None):
         parser = argparse.ArgumentParser(description='')
@@ -18,7 +22,7 @@ class DataReductionTest:
             self.sample_perc = float(args.perc)
 
     @staticmethod
-    def compress_it(work_obj, file_id, offset):
+    def process_it(work_obj, file_id, offset, md5):
         fw = io.BytesIO()
         work_obj.rc.fs.read_file(file_ = fw, 
                                  id_ = file_id, 
@@ -26,15 +30,19 @@ class DataReductionTest:
                                  length = 4096)
         fw.seek(0)
         c_len = len(zlib.compress(fw.read(), 4))
+        fw.seek(0)
+        md5.update(fw.read())
+        b64 = codecs.encode(md5.digest(), 'base64').decode()
         c_level = int(round(10 * c_len / 4096.0, 0))
         if c_level == 10:
             c_level = 9
-        return c_level
+        return {"cf": c_level, "md5": b64[0:10]}
 
     @staticmethod
     def every_batch(file_list, work_obj):
         res = []
         action_count = 0
+        md5 = hashlib.md5()
         for file_obj in file_list:
             if file_obj["type"] == 'FS_FILE_TYPE_FILE':
                 # sample 5% of files
@@ -42,30 +50,34 @@ class DataReductionTest:
                     continue
                 action_count += 1
                 file_size = int(file_obj['size'])
+                md5 = hashlib.md5()
                 try:
-                    c_start = DataReductionTest.compress_it(work_obj, file_obj["id"], 0)
+                    c_start = DataReductionTest.process_it(work_obj, file_obj["id"], 0, md5)
                 except:
                     continue
-                c_end = 'x'
-                c_middle = 'x'
+                c_end = {"cf":"X", "md5":"X"}
+                c_middle = {"cf":"X", "md5":"X"}
                 if file_size > 4096*2:
                     try:
-                        c_end = DataReductionTest.compress_it(work_obj, file_obj["id"]
-                                                                , file_size-4096)
+                        c_end = DataReductionTest.process_it(work_obj, file_obj["id"]
+                                                                , file_size-4096, md5)
                     except:
                         continue
                 if file_size > 4096*3:
                     try:
-                        c_middle = DataReductionTest.compress_it(work_obj, file_obj["id"]
-                                        , math.floor((file_size/2.0)/4096)*4096)
+                        c_middle = DataReductionTest.process_it(work_obj, file_obj["id"]
+                                        , math.floor((file_size/2.0)/4096)*4096, md5)
                     except:
                         continue
                 ext = file_obj['name'].rpartition('.')[-1]
                 ext = ext.encode('ascii', 'ignore')
                 if len(ext) > 6:
                     ext = ext[0:6]
-                res.append("%s%s%s|%s|%s" % (c_start, c_middle, c_end, ext, file_obj["size"]))
-                if action_count > 100:
+                res.append("%s|%s|%s|%s|%s|%s|%s|%s" % (
+                                             c_start["cf"], c_middle["cf"], c_end["cf"], 
+                                             c_start["md5"], c_middle["md5"], c_end["md5"], 
+                                             ext, file_obj["size"]))
+                if action_count >= 100:
                     with work_obj.result_file_lock:
                         work_obj.action_count.value += action_count
                     action_count = 0
