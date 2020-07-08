@@ -238,6 +238,8 @@ class QWalkWorker:
             try:
                 if next_uri == 'first':
                     res = ww.rc.fs.read_directory(id_=d['path_id'], page_size=1000)
+                elif next_uri == 'directory_deleted':
+                    break
                 elif next_uri != '':
                     res = ww.rc.request('GET', next_uri)
                 else:
@@ -249,6 +251,7 @@ class QWalkWorker:
                     next_uri = 'directory_deleted'
                 else:
                     log_it("HTTP API error: %s" % re.sub(r'[\r\n]+', ' ', str(e))[:100])
+                    log_it("id: %s - next_uri: %s" % (d['path_id'], next_uri))
                     ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
                 continue
             except:
