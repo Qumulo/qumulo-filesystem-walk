@@ -27,10 +27,14 @@ class Search:
         for file_obj in file_list:
             if work_obj.run_class.search_str:
                 if work_obj.run_class.search_str in file_obj['path']:
+                    if "name" in work_obj.run_class.cols:
+                        file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
                     line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
                     results.append(line)
             elif work_obj.run_class.search_re:
                 if work_obj.run_class.search_re.match(file_obj['path']):
+                    if "name" in work_obj.run_class.cols:
+                        file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
                     line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
                     results.append(line)
 
