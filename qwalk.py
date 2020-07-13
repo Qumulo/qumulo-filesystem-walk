@@ -23,6 +23,7 @@ def main():
                              'ChangeExtension, SummarizeOwners, DataReductionTest, ' + \
                              'ModeBitsChecker'
                             , required=True)
+    parser.add_argument('--snap', help='Snapshot id')
 
     try:
         # Will fail with missing args, but unknown args will all fall through.

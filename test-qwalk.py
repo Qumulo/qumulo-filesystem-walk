@@ -18,11 +18,11 @@ from qtasks.SummarizeOwners import *
 LOG_FILE_NAME = 'test-qwalk-log-file.txt'
 
 
-def test_search(creds, args, search):
+def test_search(creds, args, search, snapshot=None):
     log_it("Search: %s" % search)
     w = QWalkWorker(creds, Search(search), args.d,
                     None, LOG_FILE_NAME, None)
-    w.run()
+    w.run(snapshot)
     if os.path.exists(LOG_FILE_NAME):
         content = re.sub(r'[\r\n]+', ' ', open(LOG_FILE_NAME).read())
         log_it("FOUND!  : Search found - %s" % content)
@@ -88,6 +88,13 @@ def main():
         rc.fs.write_file(data_file = fw, id_ = v["id"])
         f_size *= 4
         fw.close()
+
+    log_it("Test snapshot search after deleting file")
+    snap = rc.snapshot.create_snapshot(name="test-qwalk", id_=test_dir['id'])
+    rc.fs.delete(id_=f['pasta']['id'])
+    test_search(creds, args, ['--str', 'pasta'], snap["id"])
+    rc.snapshot.delete_snapshot(snap['id'])
+    log_it("Deleted test snapshot")
 
     log_it("Start: DataReductionTest")
     w = QWalkWorker(creds, DataReductionTest(['--perc', '1']), args.d,

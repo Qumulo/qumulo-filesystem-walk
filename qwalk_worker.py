@@ -23,6 +23,10 @@ BATCH_SIZE = 2000
 MAX_WORKER_COUNT = 96
 if os.getenv('QWORKERS'):
     MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
+WAIT_SECONDS = 10
+if os.getenv('QWAITSECONDS'):
+    WAIT_SECONDS = int(os.getenv('QWAITSECONDS'))
+
 
 def log_it(msg):
     print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
@@ -30,7 +34,7 @@ def log_it(msg):
 
 
 class QWalkWorker:
-    # Thie class has gotten a bit too circular/interdependant with qtasks.py
+    # The class has gotten a bit too circular/interdependant with qtasks.py
     def get_counters(self):
         return {
             "o_start_time": self.o_start_time,
@@ -101,26 +105,26 @@ class QWalkWorker:
             rcs.append(rcc)
         return rcs
 
-    def run(self):
+    def run(self, snapshot=None):
         if not os.path.exists("old-queue.txt"):
             self.run_class.work_start(self)
             d_attr = self.rcs[0].fs.read_dir_aggregates(path=self.start_path, max_entries = 0)
             d_attr["total_directories"] = 1 + int(d_attr["total_directories"])
             d_attr["total_inodes"] = d_attr["total_directories"] + int(d_attr["total_files"])
             log_it("Walking - Dirs:%(total_directories)9s  Inodes:%(total_inodes)10s" % d_attr)
-            self.add_to_queue({"path_id": d_attr['id']})
+            self.add_to_queue({"path_id": d_attr['id'], "snapshot": snapshot})
             self.wait_for_complete()
         else:
             with open("old-queue.txt", "r") as fr:
                 last_time = time.time()
                 for line in fr:
                     while self.queue_len.value > MAX_QUEUE_LENGTH:
-                        if time.time() - last_time > 10:
+                        if time.time() - last_time >= WAIT_SECONDS:
                             self.print_status()
                             last_time = time.time()
                         time.sleep(1)
-                    self.add_to_queue({"path_id": line})
-                    if time.time() - last_time > 10:
+                    self.add_to_queue({"path_id": line, "snapshot": snapshot})
+                    if time.time() - last_time >= WAIT_SECONDS:
                         self.print_status()
                         last_time = time.time()
             os.remove("old-queue.txt")
@@ -154,11 +158,11 @@ class QWalkWorker:
             self.queue_len.value += 1
             self.queue.put(d)
 
-    def wait_for_complete(self, delay=10):
-        time.sleep(2) # allow all worker processes to start.
+    def wait_for_complete(self):
+        time.sleep(1) # allow all worker processes to start.
         while True:
             self.print_status()
-            time.sleep(delay)
+            time.sleep(WAIT_SECONDS)
             if self.queue_len.value <= 0 and self.active_workers.value <= 0:
                 break
         log_it("Donestep- Dirs:%9s  Inodes:%10s  Actions: %10s  Dirs/sec: %4s  Files/sec: %6s" % (
@@ -183,7 +187,7 @@ class QWalkWorker:
                         args.l,
                         None,
                         )
-        w.run()
+        w.run(args.snap)
         while os.path.exists("new-queue.txt"):
             os.rename("new-queue.txt", "old-queue.txt")
             counters = w.get_counters()
@@ -195,7 +199,7 @@ class QWalkWorker:
                             args.l,
                             counters
                             )
-            w.run()
+            w.run(args.snap)
         w.run_class.work_done(w)
 
 
@@ -237,7 +241,13 @@ class QWalkWorker:
         while True:
             try:
                 if next_uri == 'first':
-                    res = ww.rc.fs.read_directory(id_=d['path_id'], page_size=1000)
+                    if d['snapshot'] is not None:
+                        res = ww.rc.fs.read_directory(id_=d['path_id'], 
+                                                      snapshot=d['snapshot'], 
+                                                      page_size=1000)
+                    else:
+                        res = ww.rc.fs.read_directory(id_=d['path_id'], 
+                                                      page_size=1000)
                 elif next_uri == 'directory_deleted':
                     break
                 elif next_uri != '':
@@ -263,7 +273,7 @@ class QWalkWorker:
                     if ww.queue_len.value > MAX_QUEUE_LENGTH:
                         leftovers.append(dd['id'])
                     else:
-                        ww.add_to_queue({"path_id": dd['id']})
+                        ww.add_to_queue({"path_id": dd['id'], "snapshot":d["snapshot"]})
                 file_count += 1
             file_list += res['files']
             if len(file_list) >= BATCH_SIZE:
