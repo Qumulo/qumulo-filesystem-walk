@@ -13,6 +13,7 @@ from qtasks.DataReductionTest import *
 from qtasks.ModeBitsChecker import *
 from qtasks.Search import *
 from qtasks.SummarizeOwners import *
+from qtasks.ApplyAcls import *
 
 
 LOG_FILE_NAME = 'test-qwalk-log-file.txt'
@@ -79,6 +80,17 @@ def main():
     f["sushi_test"] = rc.fs.create_file(dir_id=foods_dir['id'], name='寿.test')
 
     rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode='0000')
+
+
+    log_it("Test ApplyAcls")
+    log_it("acls: %s" % len(rc.fs.get_acl(id_ = flowers_dir['id'])['acl']['aces']))
+    w = QWalkWorker(creds, ApplyAcls, args.d,
+                    True, LOG_FILE_NAME, None)
+    w.run()
+    log_it("acls: %s" % len(rc.fs.get_acl(id_ = flowers_dir['id'])['acl']['aces']))
+    log_it("Done Test ApplyAcls")
+
+    sys.exit()
 
     log_it("Write data to files")
     f_size = 1

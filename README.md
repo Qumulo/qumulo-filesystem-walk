@@ -76,12 +76,18 @@ Walk the filesystem and open a random 1% of files (--perc 0.01) and use zlib.com
 This will look at the metadata on each file and write any results to a file where the file or directory looks like '0\*\*' on the mode bits.
 
 
+### Add a new ACL permission to all directories
+
+`python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls`
+
+This will look at all directories with the specified start path `-d` and then add a new ACL permission. Specifically, it will add inherited execute and read rights for authenticated users "sid:S-1-5-11". By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+
 
 ## Building qtask classes
 
 Any walk of the filesystem will involve handling lots of files and directories. It also can involve a lot of different functionality and code. The qtask classes are where this functionality can be built. Above we have a number of classes currently built, but for those that know a bit of code, they can create their own classes or modify existing classes to meet their functional needs.
 
-See the current imlementations in qtask.py to figure out how to build your own approach.
+See the current imlementations in qtasks/ to figure out how to build your own approach.
 
 For a bit of context that can help, below you will find the metadata that we have with each file inside of the `every_batch` method.
 
