@@ -21,6 +21,8 @@ except:
 
 MAX_QUEUE_LENGTH = 10000000
 BATCH_SIZE = 2000
+if os.getenv('QBATCHSIZE'):
+    MAX_WORKER_COUNT = int(os.getenv('QBATCHSIZE'))
 MAX_WORKER_COUNT = 96
 if os.getenv('QWORKERS'):
     MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
@@ -112,7 +114,7 @@ class QWalkWorker:
             d_attr = self.rcs[0].fs.read_dir_aggregates(path=self.start_path, max_entries = 0)
             d_attr["total_directories"] = 1 + int(d_attr["total_directories"])
             d_attr["total_inodes"] = d_attr["total_directories"] + int(d_attr["total_files"])
-            log_it("Walking - Dirs:%(total_directories)9s  Inodes:%(total_inodes)10s" % d_attr)
+            log_it("Walking - %(total_directories)9s dir|%(total_inodes)10s inod" % d_attr)
             self.add_to_queue({"path_id": d_attr['id'], "snapshot": snapshot})
             self.wait_for_complete()
         else:
@@ -142,7 +144,7 @@ class QWalkWorker:
         del self.rcs
 
     def print_status(self):
-        log_it("Update  - Dirs:%9s  Inodes:%10s  Actions: %10s  Dirs/sec: %4s  Files/sec: %6s  Qlen:%8s" % (
+        log_it("Update  - %9s dir|%10s inod|%10s actn|%4s dir/s|%6s fil/s|%8s q" % (
                 self.dir_count.value,
                 self.file_count.value,
                 self.action_count.value,
@@ -166,12 +168,12 @@ class QWalkWorker:
             time.sleep(WAIT_SECONDS)
             if self.queue_len.value <= 0 and self.active_workers.value <= 0:
                 break
-        log_it("Donestep- Dirs:%9s  Inodes:%10s  Actions: %10s  Dirs/sec: %4s  Files/sec: %6s" % (
-                self.dir_count.value
-                , self.file_count.value
-                , self.action_count.value
-                , int(self.dir_count.value / (time.time() - self.o_start_time))
-                , int(self.file_count.value / (time.time() - self.o_start_time))
+        log_it("Donestep- %9s dir|%10s inod|%10s actn|%4s dir/s|%6s fil/s" % (
+                self.dir_count.value,
+                self.file_count.value,
+                self.action_count.value,
+                int(self.dir_count.value / (time.time() - self.o_start_time)),
+                int(self.file_count.value / (time.time() - self.o_start_time))
                 ))
 
     @staticmethod
@@ -180,7 +182,6 @@ class QWalkWorker:
             run_class = eval(args.c)(other_args)
         else:
             run_class = eval(args.c)
-
         w = QWalkWorker({"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}, 
                         run_class, 
                         args.d,   # starting directory

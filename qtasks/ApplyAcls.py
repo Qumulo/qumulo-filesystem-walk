@@ -24,8 +24,10 @@ class ApplyAcls:
     @staticmethod
     def every_batch(file_list, work_obj):
         results = []
+        action_count = 0
         for file_obj in file_list:
             if file_obj['type'] == 'FS_FILE_TYPE_DIRECTORY':
+                action_count += 1
                 try:
                     status = "nochange"
                     if work_obj.MAKE_CHANGES:
@@ -35,6 +37,10 @@ class ApplyAcls:
                     status = "**failed**"
                     print(e)
                 results.append("%s|%s|%s" % (status, file_obj['id'], file_obj['path']))
+                if action_count >= 100:
+                    with work_obj.result_file_lock:
+                        work_obj.action_count.value += action_count
+                    action_count = 0
 
         if len(results) > 0:
             with work_obj.result_file_lock:
@@ -42,7 +48,7 @@ class ApplyAcls:
                 for d in results:
                     fw.write("%s\n" % d)
                 fw.close()
-                work_obj.action_count.value += len(results)
+                work_obj.action_count.value += action_count
 
     @staticmethod
     def work_start(work_obj):
