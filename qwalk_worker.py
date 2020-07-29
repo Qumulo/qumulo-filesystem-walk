@@ -89,13 +89,13 @@ class QWalkWorker:
         self.write_file_lock = multiprocessing.Lock()
         self.result_file_lock = multiprocessing.Lock()
         self.start_time = time.time()
-        self.rcs = self.get_many_clients(creds, MAX_WORKER_COUNT)
+        self.rcs = QWalkWorker.get_many_clients(creds, MAX_WORKER_COUNT)
         self.rc = None
         self.pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                          QWalkWorker.worker_main,
                                          (QWalkWorker.list_dir, self))
-
-    def get_many_clients(self, creds, client_count):
+    @staticmethod
+    def get_many_clients(creds, client_count):
         rc = RestClient(creds["QHOST"], 8000)
         rc.login(creds["QUSER"], creds["QPASS"])
         ips = []

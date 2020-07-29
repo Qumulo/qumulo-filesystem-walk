@@ -62,6 +62,37 @@ Case-insensitive search for files with the string 'password' or 'passwd' in the 
 Look for the output in `output-walk-log.txt` in the same directory.
 
 
+### List everything (files, directories, etc) in the filesystem
+
+`python qwalk.py -s product.eng.qumulo.com -d / -c Search --re "." --cols path,type,id,size,blocks,owner,change_time`
+
+This "search" is basically looking for anything and everything. `--re "."` means look for any charcter in the path. With each results it will then print a single line to the output file that includes the specified `--cols`. If no cols are specified, just the path is saved to the output file. All columns will saved in pipe-delimited format "|".
+
+All potential columns include:
+
+* path - full path
+* name - name of the item
+* dir_id - integer id of the parent direcory
+* type - the type of item, usually FS_FILE_TYPE_FILE or FS_FILE_TYPE_DIRECTORY
+* id - integer id
+* file_number - integer id
+* change_time - last change timestamp
+* creation_time - creation timestamp
+* modification_time - last modified timestamp
+* child_count - direct children if a directory
+* num_links - links to this item. includes itself, so starts at 1
+* size - size of the contents if a file
+* datablocks - data block(4096 byte) count of the item
+* metablocks - metadata block(4096 byte) count of the item
+* blocks - total block(4096 byte) count of the item
+* owner - owner integer id
+* owner_details - details about the owner
+* group - group integer id
+* group_details details about the group
+* mode - POSIX mode bits
+* symlink_target_type - symbolic link target type
+
+
 ### Examine contents of files to check for data reduction potential
 
 `python qwalk.py -s product.eng.qumulo.com -d / -c DataReductionTest --perc 0.01`
