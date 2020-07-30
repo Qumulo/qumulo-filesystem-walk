@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import time
+import random
 import traceback
 import multiprocessing
 from qumulo.rest_client import RestClient
@@ -89,29 +90,26 @@ class QWalkWorker:
         self.write_file_lock = multiprocessing.Lock()
         self.result_file_lock = multiprocessing.Lock()
         self.start_time = time.time()
-        self.rcs = QWalkWorker.get_many_clients(creds, MAX_WORKER_COUNT)
         self.rc = None
+        self.ips = self.rc_get_ips(self.creds)
         self.pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                          QWalkWorker.worker_main,
                                          (QWalkWorker.list_dir, self))
-    @staticmethod
-    def get_many_clients(creds, client_count):
+
+    def rc_get_ips(self, creds):
         rc = RestClient(creds["QHOST"], 8000)
         rc.login(creds["QUSER"], creds["QPASS"])
         ips = []
-        rcs = []
         for d in rc.network.list_network_status_v2(1):
             ips.append(d['network_statuses'][0]['address'])
-        for i in range(0, client_count):
-            rcc = RestClient(ips[i % len(ips)], 8000)
-            rcc.login(creds["QUSER"], creds["QPASS"])
-            rcs.append(rcc)
-        return rcs
+        return ips
 
     def run(self, snapshot=None):
         if not os.path.exists("old-queue.txt"):
             self.run_class.work_start(self)
-            d_attr = self.rcs[0].fs.read_dir_aggregates(path=self.start_path, max_entries = 0)
+            rc = RestClient(self.creds["QHOST"], 8000)
+            rc.login(self.creds["QUSER"], self.creds["QPASS"])
+            d_attr = rc.fs.read_dir_aggregates(path=self.start_path, max_entries = 0)
             d_attr["total_directories"] = 1 + int(d_attr["total_directories"])
             d_attr["total_inodes"] = d_attr["total_directories"] + int(d_attr["total_files"])
             log_it("Walking - %(total_directories)9s dir|%(total_inodes)10s inod" % d_attr)
@@ -136,12 +134,11 @@ class QWalkWorker:
         self.pool.join()
         self.queue.close()
         self.queue.join_thread()
-        for rc in self.rcs:
+        if self.rc:
             rc.close()
             del rc
         del self.pool
         del self.queue
-        del self.rcs
 
     def print_status(self):
         log_it("Update  - %9s dir|%10s inod|%10s actn|%4s dir/s|%6s fil/s|%8s q" % (
@@ -209,7 +206,9 @@ class QWalkWorker:
     def worker_main(func, ww):
         p_name = multiprocessing.current_process().name
         ww.worker_id = int(re.match(r'.*?-([0-9])+', p_name).groups(1)[0])-1
-        ww.rc = ww.rcs[ww.worker_id % MAX_WORKER_COUNT]
+        rc = RestClient(random.choice(ww.ips), 8000)
+        rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+        ww.rc = rc
         file_list = []
         with ww.queue_lock:
             ww.active_workers.value += 1
