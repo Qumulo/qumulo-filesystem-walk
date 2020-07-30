@@ -256,11 +256,11 @@ class QWalkWorker:
                 else:
                     break
             except RequestError as e:
-                # handle API errors, usually it's the 10 hour expiration.
-                time.sleep(5)
+                # handle API errors, usually it's the 10 hour expiration or directory deleted.
                 if '404' in str(e):
                     next_uri = 'directory_deleted'
                 else:
+                    time.sleep(5)
                     log_it("HTTP API error: %s" % re.sub(r'[\r\n]+', ' ', str(e))[:100])
                     log_it("id: %s - next_uri: %s" % (d['path_id'], next_uri))
                     ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
