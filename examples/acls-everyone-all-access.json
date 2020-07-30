@@ -1,0 +1,32 @@
+{
+    "control": [
+        "PRESENT"
+    ], 
+    "aces": [
+        {
+            "flags": [], 
+            "rights": [
+                "READ",
+                "READ_EA",
+                "READ_ATTR",
+                "READ_ACL",
+                "WRITE_EA",
+                "WRITE_ATTR",
+                "WRITE_ACL",
+                "CHANGE_OWNER",
+                "WRITE_GROUP",
+                "DELETE",
+                "EXECUTE",
+                "MODIFY",
+                "EXTEND",
+                "DELETE_CHILD",
+                "SYNCHRONIZE"
+            ], 
+            "type": "ALLOWED", 
+            "trustee": {
+                "sid": "S-1-1-0"
+            }
+        }
+    ], 
+    "posix_special_permissions": []
+}

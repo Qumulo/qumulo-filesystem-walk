@@ -1,0 +1,10 @@
+{
+    "flags": [],
+    "rights": [
+        "READ"
+    ], 
+    "type": "ALLOWED",
+    "trustee": {
+        "sid": "S-1-1-0"
+    }
+}

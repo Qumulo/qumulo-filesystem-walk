@@ -78,20 +78,7 @@ def main():
     f["rice"] = rc.fs.create_file(dir_id=foods_dir['id'], name='rice.txt')
     f["sushi"] = rc.fs.create_file(dir_id=foods_dir['id'], name='寿.漢')
     f["sushi_test"] = rc.fs.create_file(dir_id=foods_dir['id'], name='寿.test')
-
     rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode='0000')
-
-
-    log_it("Test ApplyAcls")
-    log_it("acls: %s" % len(rc.fs.get_acl(id_ = flowers_dir['id'])['acl']['aces']))
-    w = QWalkWorker(creds, ApplyAcls, args.d,
-                    True, LOG_FILE_NAME, None)
-    w.run()
-    log_it("acls: %s" % len(rc.fs.get_acl(id_ = flowers_dir['id'])['acl']['aces']))
-    log_it("Done Test ApplyAcls")
-
-    sys.exit()
-
     log_it("Write data to files")
     f_size = 1
     for k, v in f.items():
@@ -101,40 +88,63 @@ def main():
         f_size *= 4
         fw.close()
 
+
+    print("-" * 80)
+    log_it("Test ApplyAcls")
+    log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
+    w = QWalkWorker(creds, 
+                    ApplyAcls(["--replace_acls", "examples/acls-everyone-all-access.json"]), 
+                    foods_dir['path'],
+                    True, LOG_FILE_NAME, None)
+    w.run()
+    log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
+    w = QWalkWorker(creds, 
+                    ApplyAcls(["--add_entry", "examples/ace-everyone-read-only.json"]), 
+                    foods_dir['path'],
+                    True, LOG_FILE_NAME, None)
+    w.run()
+    log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
+    log_it("Done Test ApplyAcls")
+    print("-" * 80)
+
     log_it("Test snapshot search after deleting file")
     snap = rc.snapshot.create_snapshot(name="test-qwalk", id_=test_dir['id'])
     rc.fs.delete(id_=f['pasta']['id'])
     test_search(creds, args, ['--str', 'pasta'], snap["id"])
     rc.snapshot.delete_snapshot(snap['id'])
     log_it("Deleted test snapshot")
+    print("-" * 80)
 
     log_it("Start: DataReductionTest")
     w = QWalkWorker(creds, DataReductionTest(['--perc', '1']), args.d,
                     True, LOG_FILE_NAME, None)
     w.run()
-    print("-" * 80)
+    print("." * 80)
     print(open(DataReductionTest.FILE_NAME).read().strip())
-    print("-" * 80)
+    print("." * 80)
     w.run_class.work_done(w)
     os.remove(DataReductionTest.FILE_NAME)
     log_it("Done with DataReductionTest")
+    print("-" * 80)
 
     log_it("Start: ModeBitsChecker")
     w = QWalkWorker(creds, ModeBitsChecker, args.d,
                     True, LOG_FILE_NAME, None)
     w.run()
-    print("-" * 80)
+    print("." * 80)
     print(open(ModeBitsChecker.FILE_NAME).read().strip())
-    print("-" * 80)
+    print("." * 80)
     w.run_class.work_done(w)
     os.remove(ModeBitsChecker.FILE_NAME)
     log_it("Done with ModeBitsChecker")
+    print("-" * 80)
 
     log_it("Start: SummarizeOwners")
     w = QWalkWorker(creds, SummarizeOwners, args.d,
                     True, LOG_FILE_NAME, None)
     w.run()
     w.run_class.work_done(w)
+    print("-" * 80)
 
     test_search(creds, args, ['--re', '.*jpeg'])
     log_it("Start: ChangeExtension: 'jpeg' to 'jpg'")
@@ -143,10 +153,13 @@ def main():
     w.run()
     log_it("Done : ChangeExtension: 'jpeg' to 'jpg'")
     test_search(creds, args, ['--re', '.*jpeg'])
-
+    print("-" * 80)
     test_search(creds, args, ['--re', '.*'])
+    print("-" * 80)
     test_search(creds, args, ['--str', 'rose'])
+    print("-" * 80)
     test_search(creds, args, ['--str', 'pig'])
+    print("-" * 80)
 
     log_it("Delete directory: %s/%s" % (parent_dir if parent_dir != '/' else '', test_dir_name))
     rc.fs.delete_tree(id_ = test_dir['id'])

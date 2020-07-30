@@ -4,7 +4,6 @@ import io
 import argparse
 
 class Search:
-    ARGS = None
     def __init__(self, args):
         parser = argparse.ArgumentParser(description='')
         parser.add_argument('--re', help='', dest="search_re")

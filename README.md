@@ -107,11 +107,18 @@ Walk the filesystem and open a random 1% of files (--perc 0.01) and use zlib.com
 This will look at the metadata on each file and write any results to a file where the file or directory looks like '0\*\*' on the mode bits.
 
 
-### Add a new ACL permission to all directories
+### Add a new ACE "access control entry" to all items in a directory
 
-`python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls`
+`python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls --add_entry examples/ace-everyone-read-only.json`
 
-This will look at all directories with the specified start path `-d` and then add a new ACL permission. Specifically, it will add inherited execute and read rights for authenticated users "sid:S-1-5-11". By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+This will look at all items within the specified start path `-d` and then add a new ACE. Specifically, it will add the ace in the example file examples/ace-everyone-read-only.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+
+
+### Replace *ALL* ACLs on all items in a directory
+
+`python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls --replace_acls examples/acls-everyone-all-access.json`
+
+This will look at all items within the specified start path `-d` and then replace the existing ACLs with the new ACls in the example file examples/acls-everyone-all-access.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
 ## Building qtask classes
