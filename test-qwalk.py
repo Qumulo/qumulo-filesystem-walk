@@ -104,6 +104,13 @@ def main():
                     True, LOG_FILE_NAME, None)
     w.run()
     log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
+    log_it("acls before : %s" % len(rc.fs.get_acl(id_ = foods_dir['id'])['acl']['aces']))
+    w = QWalkWorker(creds, 
+                    ApplyAcls(["--add_entry", "examples/ace-everyone-execute-traverse.json", "--dirs_only"]), 
+                    test_dir['path'],
+                    True, LOG_FILE_NAME, None)
+    w.run()
+    log_it("acls after: %s" % len(rc.fs.get_acl(id_ = foods_dir['id'])['acl']['aces']))
     log_it("Done Test ApplyAcls")
     print("-" * 80)
 

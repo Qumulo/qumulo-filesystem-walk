@@ -1,0 +1,6 @@
+{
+    "type": "ALLOWED",
+    "flags": ["CONTAINER_INHERIT", "INHERITED"],
+    "rights": ["EXECUTE", "READ_ACL"],
+    "trustee": {"sid": "S-1-5-11"}
+}

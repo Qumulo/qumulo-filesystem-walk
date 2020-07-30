@@ -13,9 +13,13 @@ class ApplyAcls:
         parser = argparse.ArgumentParser(description='')
         parser.add_argument('--replace_acls', help='')
         parser.add_argument('--add_entry', help='')
+        parser.add_argument('--dirs_only', action='store_true', help='')
         args = parser.parse_args(args)
         self.replace_acls = None
         self.add_entry = None
+        self.dirs_only = False
+        if args.dirs_only:
+            self.dirs_only = True
         if args.replace_acls:
             self.replace_acls = json.loads(open(args.replace_acls).read())
         elif args.add_entry:
@@ -35,8 +39,8 @@ class ApplyAcls:
         results = []
         action_count = 0
         for file_obj in file_list:
-            # todo: directories and/or files
-            # if file_obj['type'] == 'FS_FILE_TYPE_DIRECTORY':
+            if work_obj.run_class.dirs_only and file_obj['type'] != 'FS_FILE_TYPE_DIRECTORY':
+                continue
             action_count += 1
             try:
                 status = "nochange"

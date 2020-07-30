@@ -107,11 +107,18 @@ Walk the filesystem and open a random 1% of files (--perc 0.01) and use zlib.com
 This will look at the metadata on each file and write any results to a file where the file or directory looks like '0\*\*' on the mode bits.
 
 
-### Add a new ACE "access control entry" to all items in a directory
+### Add a new read ACE "access control entry" to all items in a directory
 
 `python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls --add_entry examples/ace-everyone-read-only.json`
 
-This will look at all items within the specified start path `-d` and then add a new ACE. Specifically, it will add the ace in the example file examples/ace-everyone-read-only.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+This will look at all items within the specified start path `-d` and then add a new ACE. Specifically, it will add the ace in the example file examples/ace-everyone-read-only.json. By default, it will only output the list of items that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+
+
+### Add a new 'traverse/execute' ACE "access control entry" to all (and only) subdirectories in a directory
+
+`python qwalk.py -s product.eng.qumulo.com -d /test -c ApplyAcls --add_entry examples/ace-everyone-execute-traverse.json --dirs_only`
+
+This will look at all items within the specified start path `-d` and then add a new execute/traverse ACE for the Authenticated Users SID as specified in examples/ace-everyone-execute-traverse.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
 ### Replace *ALL* ACLs on all items in a directory
