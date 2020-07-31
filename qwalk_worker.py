@@ -25,6 +25,8 @@ BATCH_SIZE = 2000
 if os.getenv('QBATCHSIZE'):
     MAX_WORKER_COUNT = int(os.getenv('QBATCHSIZE'))
 MAX_WORKER_COUNT = 96
+if 'win' in sys.platform.lower():
+    MAX_WORKER_COUNT = 60  # https://bugs.python.org/issue26903
 if os.getenv('QWORKERS'):
     MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
 WAIT_SECONDS = 10
