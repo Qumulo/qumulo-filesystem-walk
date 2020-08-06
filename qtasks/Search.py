@@ -8,8 +8,10 @@ class Search:
         parser = argparse.ArgumentParser(description='')
         parser.add_argument('--re', help='', dest="search_re")
         parser.add_argument('--str', help='', dest="search_str")
+        parser.add_argument('--itemtype', help='')
         parser.add_argument('--cols', help='')
         args = parser.parse_args(args)
+        self.itemtype = None
         self.search_str = None
         self.search_re = None
         self.cols = ['path']
@@ -19,21 +21,27 @@ class Search:
             self.search_str = args.search_str
         if args.cols:
             self.cols = args.cols.split(',')
+        if args.itemtype:
+            self.itemtype = args.itemtype
 
     @staticmethod
     def every_batch(file_list, work_obj):
         results = []
         for file_obj in file_list:
+            found = False
             if work_obj.run_class.search_str:
                 if work_obj.run_class.search_str in file_obj['path']:
-                    if "name" in work_obj.run_class.cols:
-                        file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
-                    line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
-                    results.append(line)
+                    found = True
             elif work_obj.run_class.search_re:
                 if work_obj.run_class.search_re.match(file_obj['path']):
-                    if "name" in work_obj.run_class.cols:
-                        file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
+                    found = True
+            else:
+                found = True
+
+            if found:
+                if "name" in work_obj.run_class.cols:
+                    file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
+                if work_obj.run_class.itemtype is None or work_obj.run_class.itemtype in file_obj["type"].lower():
                     line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
                     results.append(line)
 

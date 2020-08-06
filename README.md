@@ -93,6 +93,12 @@ All potential columns include:
 * mode - POSIX mode bits
 * symlink_target_type - symbolic link target type
 
+### Find all symbolic links (symlinks) in a path
+
+`python qwalk.py -s product.eng.qumulo.com -d /test -c Search --itemtype link --cols path,type,id,size,blocks,owner,change_time`
+
+This command will walk the filesystem and search for items that are symlinks. It will also list out the corresponding metadata specified by --cols
+
 
 ### Examine contents of files to check for data reduction potential
 
