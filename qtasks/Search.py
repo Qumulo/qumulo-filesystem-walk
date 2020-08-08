@@ -43,6 +43,14 @@ class Search:
                     file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
                 if work_obj.run_class.itemtype is None or work_obj.run_class.itemtype in file_obj["type"].lower():
                     line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
+                    if 'link' in file_obj["type"].lower():
+                        fw = io.BytesIO()
+                        work_obj.rc.fs.read_file(id_=file_obj["id"], file_=fw)
+                        fw.seek(0)
+                        parent_path = os.path.dirname(file_obj['path'])
+                        target = fw.read().decode('utf8').strip().strip('\x00')
+                        target = os.path.normpath(os.path.join(parent_path, target))
+                        line = "%s|%s" % (target, line)
                     results.append(line)
 
         if len(results) > 0:
