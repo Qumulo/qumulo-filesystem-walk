@@ -135,6 +135,20 @@ This will look at all items within the specified start path `-d` and then add a 
 This will look at all items within the specified start path `-d` and then replace the existing ACLs with the new ACls in the example file examples/acls-everyone-all-access.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
+### Copy a full directory tree
+
+`python qwalk.py -s product.eng.qumulo.com -d /test -c CopyDirectory --to_dir /test-full-copy`
+
+This will copy all items within the specified start directory `-d` to the destination directory `--to_dir`.
+
+
+### Restore all data from a snapshot for the given directory.
+
+`python qwalk.py -s product.eng.qumulo.com -d /test --snap 55123 -c CopyDirectory --to_dir /test-full-copy-from-snap`
+
+This will copy all items within the specified start directory `-d` and within the specified snapshot to the destination directory `--to_dir`.
+
+
 ## Building qtask classes
 
 Any walk of the filesystem will involve handling lots of files and directories. It also can involve a lot of different functionality and code. The qtask classes are where this functionality can be built. Above we have a number of classes currently built, but for those that know a bit of code, they can create their own classes or modify existing classes to meet their functional needs.

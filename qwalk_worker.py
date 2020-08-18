@@ -14,6 +14,7 @@ from qtasks.ModeBitsChecker import *
 from qtasks.Search import *
 from qtasks.SummarizeOwners import *
 from qtasks.ApplyAcls import *
+from qtasks.CopyDirectory import *
 
 try:
     import queue # python2/3
@@ -23,7 +24,7 @@ except:
 MAX_QUEUE_LENGTH = 10000000
 BATCH_SIZE = 2000
 if os.getenv('QBATCHSIZE'):
-    MAX_WORKER_COUNT = int(os.getenv('QBATCHSIZE'))
+    BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
 MAX_WORKER_COUNT = 96
 if 'win' in sys.platform.lower():
     MAX_WORKER_COUNT = 60  # https://bugs.python.org/issue26903
@@ -53,7 +54,7 @@ class QWalkWorker:
             "file_count": self.file_count.value,
         }
 
-    def __init__(self, creds, run_class, start_path, make_changes, log_file, counters=None):
+    def __init__(self, creds, run_class, start_path, snap, make_changes, log_file, counters=None):
         is_initialized = False
         try:
             if self.o_start_time:
@@ -61,6 +62,7 @@ class QWalkWorker:
         except:
             pass
 
+        self.snap = snap
         self.o_start_time = time.time()
         self.dir_counter = 0
         self.file_counter = 0
@@ -106,7 +108,7 @@ class QWalkWorker:
             ips.append(d['network_statuses'][0]['address'])
         return ips
 
-    def run(self, snapshot=None):
+    def run(self):
         if not os.path.exists("old-queue.txt"):
             self.run_class.work_start(self)
             rc = RestClient(self.creds["QHOST"], 8000)
@@ -115,7 +117,7 @@ class QWalkWorker:
             d_attr["total_directories"] = 1 + int(d_attr["total_directories"])
             d_attr["total_inodes"] = d_attr["total_directories"] + int(d_attr["total_files"])
             log_it("Walking - %(total_directories)9s dir|%(total_inodes)10s inod" % d_attr)
-            self.add_to_queue({"path_id": d_attr['id'], "snapshot": snapshot})
+            self.add_to_queue({"type":"list_dir", "path_id": d_attr['id'], "snapshot": self.snap})
             self.wait_for_complete()
         else:
             with open("old-queue.txt", "r") as fr:
@@ -126,7 +128,7 @@ class QWalkWorker:
                             self.print_status()
                             last_time = time.time()
                         time.sleep(1)
-                    self.add_to_queue({"path_id": line, "snapshot": snapshot})
+                    self.add_to_queue({"type":"list_dir", "path_id": line, "snapshot": self.snap})
                     if time.time() - last_time >= WAIT_SECONDS:
                         self.print_status()
                         last_time = time.time()
@@ -184,11 +186,12 @@ class QWalkWorker:
         w = QWalkWorker({"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}, 
                         run_class, 
                         args.d,   # starting directory
+                        args.snap,
                         args.g,
                         args.l,
                         None,
                         )
-        w.run(args.snap)
+        w.run()
         while os.path.exists("new-queue.txt"):
             os.rename("new-queue.txt", "old-queue.txt")
             counters = w.get_counters()
@@ -196,11 +199,12 @@ class QWalkWorker:
             w = QWalkWorker({"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}, 
                             eval(args.c), 
                             args.d,   # starting directory
+                            args.snap,
                             args.g,
                             args.l,
                             counters
                             )
-            w.run(args.snap)
+            w.run()
         w.run_class.work_done(w)
 
 
@@ -217,10 +221,16 @@ class QWalkWorker:
         while True:
             try:
                 data = ww.queue.get(True, timeout=5)
-                file_list += func(data, ww)
-                if len(file_list) >= BATCH_SIZE:
-                    ww.run_class.every_batch(file_list, ww)
-                    file_list = []
+                if data["type"] == "list_dir":
+                    file_list += func(data, ww)
+                    process_list = []
+                    while len(file_list) > 0:
+                        process_list.append(file_list.pop())
+                        if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
+                            ww.add_to_queue({"type":"process_list", "list": process_list})
+                            process_list = []
+                elif data["type"] == "process_list":
+                    ww.run_class.every_batch(data["list"], ww)
             except queue.Empty:
                 # this is expected
                 break
@@ -231,9 +241,9 @@ class QWalkWorker:
                 traceback.print_exc(file=sys.stdout)
             with ww.queue_lock:
                 ww.queue_len.value -= 1
-        ww.run_class.every_batch(file_list, ww)
         with ww.queue_lock:
             ww.active_workers.value -= 1
+
 
     @staticmethod
     def list_dir(d, ww):
@@ -276,11 +286,20 @@ class QWalkWorker:
                     if ww.queue_len.value > MAX_QUEUE_LENGTH:
                         leftovers.append(dd['id'])
                     else:
-                        ww.add_to_queue({"path_id": dd['id'], "snapshot":d["snapshot"]})
+                        ww.add_to_queue({"type":"list_dir", "path_id": dd['id'], "snapshot":d["snapshot"]})
                 file_count += 1
             file_list += res['files']
+
+            # handle very large directories dynamically
             if len(file_list) >= BATCH_SIZE:
-                ww.run_class.every_batch(file_list, ww)
+                process_list = []
+                while len(file_list) > 0:
+                    process_list.append(file_list.pop())
+                    if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
+                        ww.add_to_queue({"type":"process_list", "list": process_list})
+                        process_list = []
+
+                # ww.run_class.every_batch(file_list, ww)
                 with ww.count_lock:
                     ww.file_count.value += file_count
                 file_count = 0

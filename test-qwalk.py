@@ -14,6 +14,7 @@ from qtasks.ModeBitsChecker import *
 from qtasks.Search import *
 from qtasks.SummarizeOwners import *
 from qtasks.ApplyAcls import *
+from qtasks.CopyDirectory import *
 
 
 LOG_FILE_NAME = 'test-qwalk-log-file.txt'
@@ -21,9 +22,9 @@ LOG_FILE_NAME = 'test-qwalk-log-file.txt'
 
 def test_search(creds, args, search, snapshot=None):
     log_it("Search: %s" % search)
-    w = QWalkWorker(creds, Search(search), args.d,
+    w = QWalkWorker(creds, Search(search), args.d, snapshot,
                     None, LOG_FILE_NAME, None)
-    w.run(snapshot)
+    w.run()
     if os.path.exists(LOG_FILE_NAME):
         content = re.sub(r'[\r\n]+', ' ', open(LOG_FILE_NAME).read())
         log_it("FOUND!  : Search found - %s" % content)
@@ -88,26 +89,32 @@ def main():
         f_size *= 4
         fw.close()
 
+    log_it("Test CopyDirectory")
+    w = QWalkWorker(creds, 
+                    CopyDirectory(["--to_dir", parent_dir + "/test-qwalk-copy"]), 
+                    args.d, None,
+                    True, LOG_FILE_NAME, None)
+    w.run()
 
     print("-" * 80)
     log_it("Test ApplyAcls")
     log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
     w = QWalkWorker(creds, 
                     ApplyAcls(["--replace_acls", "examples/acls-everyone-all-access.json"]), 
-                    foods_dir['path'],
+                    foods_dir['path'], None,
                     True, LOG_FILE_NAME, None)
     w.run()
     log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
     w = QWalkWorker(creds, 
                     ApplyAcls(["--add_entry", "examples/ace-everyone-read-only.json"]), 
-                    foods_dir['path'],
+                    foods_dir['path'], None,
                     True, LOG_FILE_NAME, None)
     w.run()
     log_it("acls: %s" % len(rc.fs.get_acl(id_ = f["pasta"]['id'])['acl']['aces']))
     log_it("acls before : %s" % len(rc.fs.get_acl(id_ = foods_dir['id'])['acl']['aces']))
     w = QWalkWorker(creds, 
                     ApplyAcls(["--add_entry", "examples/ace-everyone-execute-traverse.json", "--dirs_only"]), 
-                    test_dir['path'],
+                    test_dir['path'], None,
                     True, LOG_FILE_NAME, None)
     w.run()
     log_it("acls after: %s" % len(rc.fs.get_acl(id_ = foods_dir['id'])['acl']['aces']))
@@ -123,7 +130,7 @@ def main():
     print("-" * 80)
 
     log_it("Start: DataReductionTest")
-    w = QWalkWorker(creds, DataReductionTest(['--perc', '1']), args.d,
+    w = QWalkWorker(creds, DataReductionTest(['--perc', '1']), args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
     print("." * 80)
@@ -135,7 +142,7 @@ def main():
     print("-" * 80)
 
     log_it("Start: ModeBitsChecker")
-    w = QWalkWorker(creds, ModeBitsChecker, args.d,
+    w = QWalkWorker(creds, ModeBitsChecker, args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
     print("." * 80)
@@ -147,7 +154,7 @@ def main():
     print("-" * 80)
 
     log_it("Start: SummarizeOwners")
-    w = QWalkWorker(creds, SummarizeOwners, args.d,
+    w = QWalkWorker(creds, SummarizeOwners, args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
     w.run_class.work_done(w)
@@ -155,7 +162,7 @@ def main():
 
     test_search(creds, args, ['--re', '.*jpeg'])
     log_it("Start: ChangeExtension: 'jpeg' to 'jpg'")
-    w = QWalkWorker(creds, ChangeExtension(['--from', 'jpeg', '--to', 'jpg']), args.d,
+    w = QWalkWorker(creds, ChangeExtension(['--from', 'jpeg', '--to', 'jpg']), args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
     log_it("Done : ChangeExtension: 'jpeg' to 'jpg'")
@@ -168,8 +175,12 @@ def main():
     test_search(creds, args, ['--str', 'pig'])
     print("-" * 80)
 
+    log_it("Copy tree file count: %s" % (
+            rc.fs.read_dir_aggregates(path=parent_dir + "/test-qwalk-copy", max_entries=0)['total_files']))
+
     log_it("Delete directory: %s/%s" % (parent_dir if parent_dir != '/' else '', test_dir_name))
     rc.fs.delete_tree(id_ = test_dir['id'])
+    rc.fs.delete_tree(path = parent_dir + "/test-qwalk-copy")
 
 
 if __name__ == "__main__":
