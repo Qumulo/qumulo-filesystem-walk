@@ -24,8 +24,8 @@ if os.getenv('QWAITSECONDS'):
     WAIT_SECONDS = int(os.getenv('QWAITSECONDS'))
 
 
-def log_item(rc, path_ids, op, snapshot_id, dir_id, d):
-    parent_path = os.path.dirname(d["path"])
+def log_item(rc, path_ids, op, snapshot_id, dir_id, item):
+    parent_path = os.path.dirname(item["path"])
     if dir_id is None:
         if parent_path not in path_ids:
             d = rc.fs.get_file_attr(path = parent_path, snapshot = snapshot_id)
@@ -33,7 +33,7 @@ def log_item(rc, path_ids, op, snapshot_id, dir_id, d):
         dir_id = path_ids[parent_path]
     else:
         path_ids[parent_path] = dir_id
-    line = "%(id)s|%(type)s|%(name)s|%(size)s|%(blocks)s|%(owner)s|%(change_time)s" % d
+    line = "%(id)s|%(type)s|%(name)s|%(size)s|%(blocks)s|%(owner)s|%(change_time)s" % item
     return "%s|%s|%s" % (op, dir_id, line)
 
 
@@ -124,7 +124,9 @@ def process_snap_diff(creds, path, snap_before_id, snap_after_id):
     q_len = multiprocessing.Value("i", 0)
     q_lock = multiprocessing.Lock()
     w_lock = multiprocessing.Lock()
-    w_file = "output-change-log-%s-%s.txt" % (snap_before_id, snap_after_id)
+    w_file = "output-qumulo-fs-index-%s-change-log-%s-%s.txt" % (
+                                        re.sub("[^a-z0-9]+", "_", path), 
+                                        snap_before_id, snap_after_id)
     fw = open(w_file, "w")
     fw.close()
     pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
@@ -178,31 +180,39 @@ def main():
     rc.login(creds["QUSER"], creds["QPASS"])
 
     res = rc.snapshot.list_snapshot_statuses()
-    existing_snap = None
-    for snap in res['entries']:
+    snap_before = None
+    snap_after = None
+    for snap in sorted(res['entries'], key=lambda d: int(d['id'])):
         if snap['name'] == SNAP_NAME and snap['source_file_path'] == args.d:
-            existing_snap = snap
-            break
-    # snap = rcs[len(rcs)-1].snapshot.create_snapshot(path=path, name=SNAP_NAME)
+            if snap_before is None:
+                snap_before = snap
+            elif snap_after is None:
+                snap_after = snap
 
-    snap_before_id = 746219
-    snap_after_id  = 748467
+    if snap_before and not snap_after:
+        snap_after = rc.snapshot.create_snapshot(path=args.d, name=SNAP_NAME)        
+        log_it("Created new snapshot %s on %s" % (snap_after['id'], args.d))
 
-    if snap_before_id:
+    if snap_before and snap_after:
+        log_it("Diffing snaps on %s between %s and %s" % (args.d, 
+                                                      snap_before['timestamp'][0:16],
+                                                      snap_after['timestamp'][0:16]))
         process_snap_diff(creds, 
                           args.d,
-                          snap_before_id,
-                          snap_after_id
+                          snap_before['id'],
+                          snap_after['id']
                           )
+        rc.snapshot.delete_snapshot(snapshot_id = snap_before['id'])
     else:
+        # initial tree walk
+        snap_before = rc.snapshot.create_snapshot(path=args.d, name=SNAP_NAME)
+        log_it("Initial tree walk for: %s+snap:%s" % (args.d, snap_before['id']))
+        log_file = "output-qumulo-fs-index-%s.txt" % (re.sub("[^a-z0-9]+", "_", args.d))
         w = QWalkWorker(creds, 
-                    Search(['--re', '.', 
-                            '--cols', 'dir_id,id,type,name,size,blocks,owner,change_time']), 
-                    args.d,
-                    None, "qumulo-fs-index.txt", None)
-        # snap = rc.snapshot.create_snapshot(path=args.d, name=SNAP_NAME)
-        # log_it("Snapshot created: %s" % snap["id"])
-        # w.run(snap['id'])
+                        Search(['--re', '.', 
+                                '--cols', 'dir_id,id,type,name,size,blocks,owner,change_time']), 
+                        args.d, str(snap_before['id']), None, log_file, None)
+        w.run()
 
 
 if __name__ == "__main__":
