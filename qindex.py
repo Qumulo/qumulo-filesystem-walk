@@ -210,7 +210,7 @@ def main():
         log_file = "output-qumulo-fs-index-%s.txt" % (re.sub("[^a-z0-9]+", "_", args.d))
         w = QWalkWorker(creds, 
                         Search(['--re', '.', 
-                                '--cols', 'dir_id,id,type,name,size,blocks,owner,change_time']), 
+                                '--cols', 'dir_id,id,type,path,name,size,blocks,owner,change_time']), 
                         args.d, str(snap_before['id']), None, log_file, None)
         w.run()
 

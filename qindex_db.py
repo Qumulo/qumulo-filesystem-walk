@@ -15,10 +15,10 @@ def process_lines(file_name, file_id, rows_per_file):
    print("Start %s." % (file_id))
    st = time.time()
    df = pandas.read_csv(file_name, sep='|', 
-            names=['dir_id', 'id', 'f_type', 'name', 'size', 'blocks', 'owner', 'ts'], 
+            names=['dir_id', 'id', 'f_type', 'path', 'name', 'size', 'blocks', 'owner', 'ts', 'link_target'], 
             dtype={'dir_id': 'int64', 'id': 'int64', 'f_type':'category', 
-                   'name': 'str', 'size':'int64', 
-                   'blocks': 'int32', 'owner':'category', 'ts':'str'},
+                   'path': 'str', 'name': 'str', 'size':'int64', 
+                   'blocks': 'int32', 'owner':'category', 'ts':'str', 'link_target':'str'},
             parse_dates=['ts'],
             date_parser=lambda x: ciso8601.parse_datetime(x[:10]).date(),
             skiprows=rows_per_file*file_id,
@@ -28,8 +28,7 @@ def process_lines(file_name, file_id, rows_per_file):
    df.to_parquet("%s-%s.parq" % (file_name, file_id))
 
 
-def csv_to_parq():
-   fname = 'output-walk-log.txt'
+def csv_to_parq(fname):
    line_num = 0
    line_length = 0
    with open(fname) as f:
@@ -47,7 +46,7 @@ def csv_to_parq():
    pool = multiprocessing.Pool(16)
    res = []
    file_id = 1
-   for file_id in range(0, files_needed+3):
+   for file_id in range(0, files_needed+1):
       # process_lines(fname, file_id, rows_per_file)
       res.append(pool.apply_async(process_lines, (fname, file_id, rows_per_file)))
    pool.close()
@@ -69,5 +68,5 @@ def search_parq(s):
    for r in res:
       print(r.get())
 
-csv_to_parq()
+csv_to_parq(sys.argv[1])
 # search_parq("tommy")
