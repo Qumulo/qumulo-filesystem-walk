@@ -218,29 +218,32 @@ class QWalkWorker:
         file_list = []
         with ww.queue_lock:
             ww.active_workers.value += 1
+        process_list = []
         while True:
             try:
                 data = ww.queue.get(True, timeout=5)
                 if data["type"] == "list_dir":
                     file_list += func(data, ww)
-                    process_list = []
                     while len(file_list) > 0:
                         process_list.append(file_list.pop())
-                        if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
+                        if len(process_list) >= BATCH_SIZE:
                             ww.add_to_queue({"type":"process_list", "list": process_list})
                             process_list = []
                 elif data["type"] == "process_list":
                     ww.run_class.every_batch(data["list"], ww)
+                with ww.queue_lock:
+                    ww.queue_len.value -= 1
             except queue.Empty:
-                # this is expected
-                break
+                if len(process_list) > 0:
+                    ww.add_to_queue({"type":"process_list", "list": process_list})
+                    process_list = []
+                else:
+                    break
             except:
                 # this is not expected
                 log_it("!! Exception !!")
                 log_it(sys.exc_info())
                 traceback.print_exc(file=sys.stdout)
-            with ww.queue_lock:
-                ww.queue_len.value -= 1
         with ww.queue_lock:
             ww.active_workers.value -= 1
 
