@@ -38,7 +38,7 @@ def csv_to_parq(fname):
          if line_num >= 1000:
             break
 
-   rows_per_file = 10000000
+   rows_per_file = 5000000
    file_size = os.path.getsize(fname)
    avg_line_len = line_length / line_num
    files_needed = math.ceil((file_size / avg_line_len) / rows_per_file)

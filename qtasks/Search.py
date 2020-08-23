@@ -41,6 +41,8 @@ class Search:
             if found:
                 if "name" in work_obj.run_class.cols:
                     file_obj["name"] = re.sub(r'[|\r\n\\]+', '', file_obj["name"])
+                if "path" in work_obj.run_class.cols:
+                    file_obj["path"] = re.sub(r'[|\r\n\\]+', '', file_obj["path"])
                 if work_obj.run_class.itemtype is None or work_obj.run_class.itemtype in file_obj["type"].lower():
                     line = '|'.join([file_obj[col] for col in work_obj.run_class.cols])
                     link_target = ''
@@ -51,7 +53,7 @@ class Search:
                         parent_path = os.path.dirname(file_obj['path'])
                         target = fw.read().decode('utf8').strip().strip('\x00')
                         link_target = os.path.normpath(os.path.join(parent_path, target))
-                    line = "%s|%s" % (line, link_target)
+                    line = "%s|%s" % (line, re.sub(r'[|\r\n\\]+', '', link_target))
                     results.append(line)
 
         if len(results) > 0:
