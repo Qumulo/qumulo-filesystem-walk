@@ -8,11 +8,18 @@ import glob
 import random
 import math
 import ciso8601
-import multiprocessing
+from multiprocessing import Pool, Lock, Value
 
 
+def get_ext(f):
+   try:
+      filename, ext = os.path.splitext(str(f))
+      return ext
+   except:
+      return ""
 
-def process_lines(file_name, file_id, rows_per_file):
+
+def process_all_lines(file_name, file_id, rows_per_file):
    print("Start %s." % (file_id))
    st = time.time()
    df = pandas.read_csv(file_name, sep='|', 
@@ -25,8 +32,10 @@ def process_lines(file_name, file_id, rows_per_file):
             skiprows=rows_per_file*file_id,
             nrows=rows_per_file)
    df['name'] = df['name'].str.lower()
+   df['path'] = df['path'].str.lower().replace('/[^/]*$', '', regex=True)
+   df['ext'] = df['name'].map(get_ext)
+   df.to_parquet("%s-%s.parq" % (file_name, file_id), object_encoding='utf8', engine='fastparquet')
    print("Created %s in %s seconds." % (file_id, int(time.time() - st)))
-   df.to_parquet("%s-%s.parq" % (file_name, file_id))
 
 
 def csv_to_parq(fname):
@@ -37,27 +46,32 @@ def csv_to_parq(fname):
          if random.random() < 0.005:
             line_num += 1
             line_length += len(line)
-            if line_num >= 100000:
+            if line_num >= 80000:
                break
 
-   rows_per_file = 6000000
    file_size = os.path.getsize(fname)
    avg_line_len = line_length / line_num
-   files_needed = math.ceil((file_size / avg_line_len) / rows_per_file)
-
-   pool = multiprocessing.Pool(16)
+   total_lines = int(file_size / avg_line_len)
+   rows_per_file = int(total_lines / 16)
+   if rows_per_file > 7000000:
+      rows_per_file = 7000000
+   files_needed = int(math.ceil((file_size / avg_line_len) / rows_per_file))
+   print("Creating %s files with %s rows each" % (files_needed, rows_per_file))
+   pool = Pool(processes=8)
    res = []
    file_id = 1
    for file_id in range(0, files_needed):
-      # process_lines(fname, file_id, rows_per_file)
-      res.append(pool.apply_async(process_lines, (fname, file_id, rows_per_file)))
+      # process_all_lines(fname, file_id, rows_per_file)
+      res.append(pool.apply_async(process_all_lines, args=(fname, file_id, rows_per_file)))
    pool.close()
    pool.join()
 
+
 def search_file(file, s):
-   df = pandas.read_parquet(file)
-   found = df[df['name'].str.contains(s, na=False, flags=re.IGNORECASE, regex=True)]
+   df = pandas.read_parquet(file, columns=['name'])
+   found = df[df['name'].str.contains(s, na=False, regex=False)]
    return {"results": found, "searched_count": len(df)}
+
 
 def search_parq(file, s):
    pool = multiprocessing.Pool(16)
@@ -70,9 +84,16 @@ def search_parq(file, s):
    for r in res:
       d = r.get()
       for index, row in d["results"].iterrows():
-         print("%(id)12s - %(f_type)17s - %(path)s" % row)
+         print("%(name)s" % row)
 
-if sys.argv[1] == "import_initial":
-   csv_to_parq(sys.argv[2])
-elif sys.argv[1] == "search":
-   search_parq(sys.argv[2], sys.argv[3])
+
+def main():
+   if sys.argv[1] == "import_initial":
+      csv_to_parq(sys.argv[2])
+   elif sys.argv[1] == "search":
+      search_parq(sys.argv[2], sys.argv[3])
+
+
+if __name__ == "__main__":
+    main()
+

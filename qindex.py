@@ -114,10 +114,12 @@ def snap_worker(creds, q, q_lock, q_len, w_lock, w_file):
         with q_lock:
             q_len.value -= 1
 
+
 def add_to_q(q, q_lock, q_len, item):
     with q_lock:
         q_len.value += 1
         q.put(item)
+
 
 def process_snap_diff(creds, path, snap_before_id, snap_after_id):
     q = multiprocessing.Queue()
