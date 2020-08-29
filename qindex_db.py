@@ -23,10 +23,11 @@ def process_all_lines(file_name, file_id, rows_per_file):
    print("Start %s." % (file_id))
    st = time.time()
    df = pandas.read_csv(file_name, sep='|', 
-            names=['dir_id', 'id', 'f_type', 'path', 'name', 'size', 'blocks', 'owner', 'ts', 'link_target'], 
+            names=['dir_id', 'id', 'f_type', 'path', 'name', 'size', 'blocks', 'owner', 'ts', 'link_target', 'op_type'], 
             dtype={'dir_id': 'int64', 'id': 'int64', 'f_type':'category', 
                    'path': 'str', 'name': 'str', 'size':'int64', 
-                   'blocks': 'int32', 'owner':'category', 'ts':'str', 'link_target':'str'},
+                   'blocks': 'int32', 'owner':'category', 'ts':'str', 'link_target':'str', 
+                   'op_type':'catetory'},
             parse_dates=['ts'],
             date_parser=lambda x: ciso8601.parse_datetime(x[:10]).date(),
             skiprows=rows_per_file*file_id,
@@ -88,7 +89,7 @@ def search_parq(file, s):
 
 
 def main():
-   if sys.argv[1] == "import_initial":
+   if sys.argv[1] == "parq":
       csv_to_parq(sys.argv[2])
    elif sys.argv[1] == "search":
       search_parq(sys.argv[2], sys.argv[3])

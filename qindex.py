@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import re
 import argparse
@@ -33,8 +35,8 @@ def log_item(rc, path_ids, op, snapshot_id, dir_id, item):
         dir_id = path_ids[parent_path]
     else:
         path_ids[parent_path] = dir_id
-    line = "%(id)s|%(type)s|%(name)s|%(size)s|%(blocks)s|%(owner)s|%(change_time)s" % item
-    return "%s|%s|%s" % (op, dir_id, line)
+    line = "%(id)s|%(type)s|%(path)s|%(name)s|%(size)s|%(blocks)s|%(owner)s|%(change_time)s|" % item
+    return "%s|%s|%s" % (dir_id, line, op)
 
 
 def snap_worker(creds, q, q_lock, q_len, w_lock, w_file):
@@ -106,7 +108,7 @@ def snap_worker(creds, q, q_lock, q_len, w_lock, w_file):
             log_it(sys.exc_info())
             traceback.print_exc(file=sys.stdout)
         with w_lock:
-            fw = open(w_file, "a")
+            fw = open(w_file, mode="a", encoding='utf-8')
             for li in log_items:
                 fw.write(li + "\n")
             fw.close()
@@ -129,7 +131,7 @@ def process_snap_diff(creds, path, snap_before_id, snap_after_id):
     w_file = "output-qumulo-fs-index-%s-change-log-%s-%s.txt" % (
                                         re.sub("[^a-z0-9]+", "_", path), 
                                         snap_before_id, snap_after_id)
-    fw = open(w_file, "w")
+    fw = open(w_file, mode="w", encoding='utf-8')
     fw.close()
     pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                  snap_worker,
@@ -212,7 +214,7 @@ def main():
         log_file = "output-qumulo-fs-index-%s.txt" % (re.sub("[^a-z0-9]+", "_", args.d))
         w = QWalkWorker(creds, 
                         Search(['--re', '.', 
-                                '--cols', 'dir_id,id,type,path,name,size,blocks,owner,change_time']), 
+                                '--cols', 'dir_id,id,type,path,name,size,blocks,owner,change_time,link_target,NEW']), 
                         args.d, str(snap_before['id']), None, log_file, None)
         w.run()
 
