@@ -27,7 +27,7 @@ def process_all_lines(file_name, file_id, rows_per_file):
             dtype={'dir_id': 'int64', 'id': 'int64', 'f_type':'category', 
                    'path': 'str', 'name': 'str', 'size':'int64', 
                    'blocks': 'int32', 'owner':'category', 'ts':'str', 'link_target':'str', 
-                   'op_type':'catetory'},
+                   'op_type':'category'},
             parse_dates=['ts'],
             date_parser=lambda x: ciso8601.parse_datetime(x[:10]).date(),
             skiprows=rows_per_file*file_id,
@@ -35,11 +35,12 @@ def process_all_lines(file_name, file_id, rows_per_file):
    df['name'] = df['name'].str.lower()
    df['path'] = df['path'].str.lower().replace('/[^/]*$', '', regex=True)
    df['ext'] = df['name'].map(get_ext)
-   df.to_parquet("%s-%s.parq" % (file_name, file_id), object_encoding='utf8', engine='fastparquet')
+   if df.shape[0] > 0:
+      df.to_parquet("%s-%s.parq" % (file_name, file_id), object_encoding='utf8', engine='fastparquet')
    print("Created %s in %s seconds." % (file_id, int(time.time() - st)))
 
 
-def csv_to_parq(fname):
+def csv_to_parq(fname, file_count=16):
    line_num = 0
    line_length = 0
    with open(fname) as f:
@@ -53,7 +54,7 @@ def csv_to_parq(fname):
    file_size = os.path.getsize(fname)
    avg_line_len = line_length / line_num
    total_lines = int(file_size / avg_line_len)
-   rows_per_file = int(total_lines / 16)
+   rows_per_file = int(total_lines / file_count)
    if rows_per_file > 7000000:
       rows_per_file = 7000000
    files_needed = int(math.ceil((file_size / avg_line_len) / rows_per_file))
@@ -90,7 +91,10 @@ def search_parq(file, s):
 
 def main():
    if sys.argv[1] == "parq":
-      csv_to_parq(sys.argv[2])
+      file_count = 16
+      if len(sys.argv) > 3:
+         file_count = int(sys.argv[3])
+      csv_to_parq(sys.argv[2], file_count)
    elif sys.argv[1] == "search":
       search_parq(sys.argv[2], sys.argv[3])
 
