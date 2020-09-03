@@ -133,19 +133,23 @@ def process_snap_diff(creds, path, snap_before_id, snap_after_id):
                                         snap_before_id, snap_after_id)
     fw = open(w_file, mode="w", encoding='utf-8')
     fw.close()
+    rc = RestClient(creds["QHOST"], 8000)
+    rc.login(creds["QUSER"], creds["QPASS"])
+    log_it("Run get_all_snapshot_tree_diff")
+    results = rc.snapshot.get_all_snapshot_tree_diff(older_snap=snap_before_id, 
+                                                     newer_snap=snap_after_id)
+    log_it("Done get_all_snapshot_tree_diff.")
+    log_it("Creating worker pool.")
     pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                  snap_worker,
                                  (creds, q, q_lock, q_len, w_lock, w_file))
-    rc = RestClient(creds["QHOST"], 8000)
-    rc.login(creds["QUSER"], creds["QPASS"])
-    results = rc.snapshot.get_all_snapshot_tree_diff(older_snap=snap_before_id, 
-                                                     newer_snap=snap_after_id)
+    log_it("Add items to queue.")
     ent_list = []
     for res in results:
         for ent in res['entries']:
             ent["dir_id"] = None
             ent_list.append(ent)
-            if len(ent_list) > 1:
+            if len(ent_list) > 5:
                 add_to_q(q, q_lock, q_len, {"list": ent_list,
                                             "snap_before_id": snap_before_id,
                                             "snap_after_id": snap_after_id})
@@ -153,6 +157,7 @@ def process_snap_diff(creds, path, snap_before_id, snap_after_id):
     add_to_q(q, q_lock, q_len, {"list": ent_list,
                                 "snap_before_id": snap_before_id,
                                 "snap_after_id": snap_after_id})
+    log_it("Done adding items to queue.")
     while True:
         log_it("Queue length: %s" % q_len.value)
         time.sleep(WAIT_SECONDS)
