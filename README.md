@@ -33,6 +33,20 @@ This is approach is designed to handle billions of files and directories. Becaus
 It can read over 150,000 files per second and up to 6,000 directories per second. Generally, the script is more bound by number of directories than number of files. If there are things happening with each file that you add into the `each_file` method, you will very likely end up limited by the client cpu and you won't be able to achieve 150,000 files per second or 6,000 directories per second.
 
 
+## Output and logging
+
+By default, the walk will output information to the command line every 10 seconds that indicates 
+the progress of the walk. The fields are abbreviated and correspond to the following:
+
+* **dir** - directories traversed
+* **inod** - files+directories+other stuff traversed
+* **actn** - "action" events, like setting a permission
+* **dir/s** - directories traversed per second in the last 10 second window
+* **fil/s** - files traversed per second in the last 10 second window
+* **q** - length of the queue (aka number of directories that need to be processed still)
+
+By default, a log file will also be written of everything that you're searching, traversing, or action taken. That file will be named: **output-walk-log.txt**.
+
 
 ## What can I do with the qwalk.py tool?
 
