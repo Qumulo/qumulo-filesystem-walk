@@ -23,8 +23,8 @@ except:
     pass
 
 USE_PICKLE = False
-MAX_QUEUE_LENGTH = 100000
-BATCH_SIZE = 2000
+MAX_QUEUE_LENGTH = 300000
+BATCH_SIZE = 400
 MAX_WORKER_COUNT = 50
 WAIT_SECONDS = 10
 
@@ -32,10 +32,14 @@ if os.getenv('QBATCHSIZE'):
     BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
 if 'win' in sys.platform.lower():
     MAX_WORKER_COUNT = 30
+    BATCH_SIZE = 100
+    MAX_QUEUE_LENGTH = 100000
 if os.getenv('QWORKERS'):
     MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
 if os.getenv('QWAITSECONDS'):
     WAIT_SECONDS = int(os.getenv('QWAITSECONDS'))
+if os.getenv('QUSEPICKLE'):
+    USE_PICKLE = True
 
 
 def log_it(msg):
@@ -324,11 +328,15 @@ class QWalkWorker:
                 while len(file_list) > 0:
                     process_list.append(file_list.pop())
                     if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
-                        # list_name = '%s-%s.pkl' % (time.time(), random.random())
-                        # with open(list_name, 'wb') as fw:
-                        #     pickle.dump(process_list, fw)
-                        ww.add_to_queue({"type":"process_list", "list": process_list})
+                        if USE_PICKLE:
+                            the_list = '%s-%s.pkl' % (time.time(), random.random())
+                            with open(the_list, 'wb') as fw:
+                                pickle.dump(process_list, fw)
+                        else:
+                            the_list = process_list
+                        ww.add_to_queue({"type":"process_list", "list": the_list})
                         process_list = []
+                        the_list = None
 
                 with ww.count_lock:
                     ww.file_count.value += file_count
