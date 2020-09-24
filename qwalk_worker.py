@@ -28,18 +28,22 @@ BATCH_SIZE = 400
 MAX_WORKER_COUNT = 50
 WAIT_SECONDS = 10
 
-if os.getenv('QBATCHSIZE'):
-    BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
+# smaller defaults for windows. can still be overridden
 if 'win' in sys.platform.lower():
-    MAX_WORKER_COUNT = 30
+    MAX_WORKER_COUNT = 20
     BATCH_SIZE = 100
     MAX_QUEUE_LENGTH = 100000
+
+if os.getenv('QBATCHSIZE'):
+    BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
 if os.getenv('QWORKERS'):
     MAX_WORKER_COUNT = int(os.getenv('QWORKERS'))
 if os.getenv('QWAITSECONDS'):
     WAIT_SECONDS = int(os.getenv('QWAITSECONDS'))
 if os.getenv('QUSEPICKLE'):
     USE_PICKLE = True
+if os.getenv('QMAXLEN'):
+    MAX_QUEUE_LENGTH = int(os.getenv('QMAXLEN'))
 
 
 def log_it(msg):
