@@ -163,6 +163,19 @@ This will copy all items within the specified start directory `-d` to the destin
 This will copy all items within the specified start directory `-d` and within the specified snapshot to the destination directory `--to_dir`.
 
 
+## Parameters, knobs, tweaks, mostly for working on Windows
+
+* **QBATCHSIZE** - the batch size of files and directories processed by the qtask jobs (default: 100 win, 400 othter)
+* **QWORKERS** - the number of python worker processes in the worker pool (default: 30 win, 60 other)
+* **QWAITSECONDS** - how often to wait between updates (default: 10 seconds)
+* **QMAXLEN** - max queue length for the workers (default: 100,000 win, 300,000 other)
+* **QUSEPICKLE** - the most expiremental of the knobs. Use pickled _files_ to pass batches around (default: false)
+
+Set any of these variables at the command line:
+* Windows: `Set QBATCHSIZE=100`
+* Max/Linux: `export QBATCHSIZE=1000`
+
+
 ## Building qtask classes
 
 Any walk of the filesystem will involve handling lots of files and directories. It also can involve a lot of different functionality and code. The qtask classes are where this functionality can be built. Above we have a number of classes currently built, but for those that know a bit of code, they can create their own classes or modify existing classes to meet their functional needs.
