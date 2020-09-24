@@ -5,6 +5,7 @@ import time
 import random
 import traceback
 import multiprocessing
+import pickle
 from qumulo.rest_client import RestClient
 from qumulo.lib.request import RequestError
 # Import all defined classes
@@ -227,15 +228,25 @@ class QWalkWorker:
                     while len(file_list) > 0:
                         process_list.append(file_list.pop())
                         if len(process_list) >= BATCH_SIZE:
-                            ww.add_to_queue({"type":"process_list", "list": process_list})
+                            list_name = '%s-%s.pkl' % (time.time(), random.random())
+                            with open(list_name, 'wb') as fw:
+                                pickle.dump(process_list, fw)
+                            ww.add_to_queue({"type":"process_list", "list": list_name})
                             process_list = []
                 elif data["type"] == "process_list":
-                    ww.run_class.every_batch(data["list"], ww)
+                    with open(data["list"], 'rb') as fr:
+                        the_list = pickle.load(fr)
+                    os.remove(data["list"])
+                    ww.run_class.every_batch(the_list, ww)
+                    pass
                 with ww.queue_lock:
                     ww.queue_len.value -= 1
             except queue.Empty:
                 if len(process_list) > 0:
-                    ww.add_to_queue({"type":"process_list", "list": process_list})
+                    list_name = '%s-%s.pkl' % (time.time(), random.random())
+                    with open(list_name, 'wb') as fw:
+                        pickle.dump(process_list, fw)
+                    ww.add_to_queue({"type":"process_list", "list": list_name})
                     process_list = []
                 else:
                     break
@@ -299,10 +310,12 @@ class QWalkWorker:
                 while len(file_list) > 0:
                     process_list.append(file_list.pop())
                     if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
-                        ww.add_to_queue({"type":"process_list", "list": process_list})
+                        list_name = '%s-%s.pkl' % (time.time(), random.random())
+                        with open(list_name, 'wb') as fw:
+                            pickle.dump(process_list, fw)
+                        ww.add_to_queue({"type":"process_list", "list": list_name})
                         process_list = []
 
-                # ww.run_class.every_batch(file_list, ww)
                 with ww.count_lock:
                     ww.file_count.value += file_count
                 file_count = 0
