@@ -216,7 +216,7 @@ def main():
         # initial tree walk
         snap_before = rc.snapshot.create_snapshot(path=args.d, name=SNAP_NAME)
         log_it("Initial tree walk for: %s+snap:%s" % (args.d, snap_before['id']))
-        log_file = "output-qumulo-fs-index-%s.txt" % (re.sub("[^a-z0-9]+", "_", args.d))
+        log_file = "output-qumulo-fs-index-%s-tree.txt" % (re.sub("[^a-z0-9]+", "_", args.d))
         w = QWalkWorker(creds, 
                         Search(['--re', '.', 
                                 '--cols', 'dir_id,id,type,path,name,size,blocks,owner,change_time,link_target,NEW']), 
