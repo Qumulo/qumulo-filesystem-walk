@@ -46,11 +46,14 @@ class Search:
                 file_obj['link_target'] = ''
                 if 'link_target' in work_obj.run_class.cols and 'link' in file_obj["type"].lower():
                     fw = io.BytesIO()
-                    work_obj.rc.fs.read_file(id_=file_obj["id"], file_=fw)
-                    fw.seek(0)
-                    parent_path = os.path.dirname(file_obj['path'])
-                    target = fw.read().decode('utf8').strip().strip('\x00')
-                    file_obj['link_target'] = re.sub(r'[|\r\n\\]+', '', os.path.normpath(os.path.join(parent_path, target)))
+                    try:
+                        work_obj.rc.fs.read_file(id_=file_obj["id"], file_=fw)
+                        fw.seek(0)
+                        parent_path = os.path.dirname(file_obj['path'])
+                        target = fw.read().decode('utf8').strip().strip('\x00')
+                        file_obj['link_target'] = re.sub(r'[|\r\n\\]+', '', os.path.normpath(os.path.join(parent_path, target)))
+                    except:
+                        pass
                 if work_obj.run_class.itemtype is None or work_obj.run_class.itemtype in file_obj["type"].lower():
                     line = '|'.join([file_obj[col] if col in file_obj else col for col in work_obj.run_class.cols])
                     results.append(line)

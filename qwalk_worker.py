@@ -23,16 +23,15 @@ except:
     pass
 
 USE_PICKLE = False
-MAX_QUEUE_LENGTH = 300000
-BATCH_SIZE = 400
-MAX_WORKER_COUNT = 50
+MAX_QUEUE_LENGTH = 100000
+BATCH_SIZE = 200
+MAX_WORKER_COUNT = 40
 WAIT_SECONDS = 10
 
 # smaller defaults for windows. can still be overridden
 if 'win' in sys.platform.lower():
-    MAX_WORKER_COUNT = 20
+    MAX_WORKER_COUNT = 10
     BATCH_SIZE = 100
-    MAX_QUEUE_LENGTH = 100000
 
 if os.getenv('QBATCHSIZE'):
     BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
@@ -99,7 +98,7 @@ class QWalkWorker:
         self.MAKE_CHANGES = make_changes
         self.LOG_FILE_NAME = log_file
         self.start_path = '/' if start_path == '/' else re.sub('/$', '', start_path)
-        self.queue = multiprocessing.Queue(int(MAX_QUEUE_LENGTH*1.5))
+        self.queue = multiprocessing.Queue()
         self.queue_lock = multiprocessing.Lock()
         self.count_lock = multiprocessing.Lock()
         self.write_file_lock = multiprocessing.Lock()
@@ -314,7 +313,7 @@ class QWalkWorker:
                     ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
                 continue
             except:
-                print("EXCEPTION!")
+                print("UNHANDLED EXCEPTION! - Stop reading directory")
                 break
             for dd in res['files']:
                 dd["dir_id"] = d['path_id']
