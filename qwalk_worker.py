@@ -139,7 +139,7 @@ class QWalkWorker:
                             self.print_status()
                             last_time = time.time()
                         time.sleep(1)
-                    self.add_to_queue({"type":"list_dir", "path_id": line, "snapshot": self.snap})
+                    self.add_to_queue({"type":"list_dir", "path_id": line.strip(), "snapshot": self.snap})
                     if time.time() - last_time >= WAIT_SECONDS:
                         self.print_status()
                         last_time = time.time()
