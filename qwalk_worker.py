@@ -123,7 +123,13 @@ class QWalkWorker:
             self.run_class.work_start(self)
             rc = RestClient(self.creds["QHOST"], 8000)
             rc.login(self.creds["QUSER"], self.creds["QPASS"])
-            d_attr = rc.fs.read_dir_aggregates(path=self.start_path, max_entries = 0)
+            if self.snap:
+                d_attr = rc.fs.read_dir_aggregates(path=self.start_path, 
+                                                   snapshot=self.snap,
+                                                   max_entries = 0)
+            else:
+                d_attr = rc.fs.read_dir_aggregates(path=self.start_path, 
+                                                   max_entries = 0)
             d_attr["total_directories"] = 1 + int(d_attr["total_directories"])
             d_attr["total_inodes"] = d_attr["total_directories"] + int(d_attr["total_files"])
             log_it("Walking - %(total_directories)9s dir|%(total_inodes)10s inod" % d_attr)
