@@ -6,6 +6,10 @@ import io
 import sys
 import time
 import argparse
+
+os.environ['QWORKERS'] = "2"
+os.environ['QWAITSECONDS'] = "5"
+
 from qwalk_worker import QWalkWorker, log_it
 from qumulo.rest_client import RestClient
 from qtasks.ChangeExtension import *
@@ -18,6 +22,12 @@ from qtasks.CopyDirectory import *
 
 
 LOG_FILE_NAME = 'test-qwalk-log-file.txt'
+
+def read_full_tree_flat(rc, path):
+    items = []
+    for d in rc.fs.tree_walk_preorder(path=path):
+        items.append(d['name'])
+    return sorted(items)
 
 
 def test_search(creds, args, search, snapshot=None):
@@ -40,7 +50,7 @@ def main():
                               default=os.getenv('QUSER') or 'admin')
     parser.add_argument('-p', help='Qumulo API password',
                               default=os.getenv('QPASS') or 'admin')
-    parser.add_argument('-d', help='Test Directory', default='/')
+    parser.add_argument('-d', help='Test Directory', default='/test-qwalk-parent')
 
     try:
         args, other_args = parser.parse_known_args()
@@ -95,6 +105,8 @@ def main():
                     args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
+    items = read_full_tree_flat(rc, parent_dir + '/test-qwalk-copy')
+    log_it("Copy item count: %s" % len(items))
 
     print("-" * 80)
     log_it("Test ApplyAcls")
@@ -125,6 +137,15 @@ def main():
     snap = rc.snapshot.create_snapshot(name="test-qwalk", id_=test_dir['id'])
     rc.fs.delete(id_=f['pasta']['id'])
     test_search(creds, args, ['--str', 'pasta'], snap["id"])
+
+    log_it("Test snapshot recover")
+    w = QWalkWorker(creds, CopyDirectory(['--to_dir', parent_dir + '/copy-from-snap']), 
+                    args.d, snap["id"],
+                    True, LOG_FILE_NAME, None)
+    w.run()
+    items = read_full_tree_flat(rc, parent_dir + '/copy-from-snap')
+    log_it("Copy item count in snap: %s" % len(items))
+
     rc.snapshot.delete_snapshot(snap['id'])
     log_it("Deleted test snapshot")
     print("-" * 80)
@@ -142,6 +163,7 @@ def main():
     print("-" * 80)
 
     log_it("Start: ModeBitsChecker")
+    rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode='0000')
     w = QWalkWorker(creds, ModeBitsChecker, args.d, None,
                     True, LOG_FILE_NAME, None)
     w.run()
@@ -158,7 +180,6 @@ def main():
                     True, LOG_FILE_NAME, None)
     w.run()
     w.run_class.work_done(w)
-    print("-" * 80)
 
     test_search(creds, args, ['--re', '.*jpeg'])
     log_it("Start: ChangeExtension: 'jpeg' to 'jpg'")
@@ -168,7 +189,7 @@ def main():
     log_it("Done : ChangeExtension: 'jpeg' to 'jpg'")
     test_search(creds, args, ['--re', '.*jpeg'])
     print("-" * 80)
-    test_search(creds, args, ['--re', '.*'])
+    test_search(creds, args, ['--re', '.*[.]txt'])
     print("-" * 80)
     test_search(creds, args, ['--str', 'rose'])
     print("-" * 80)
@@ -176,11 +197,13 @@ def main():
     print("-" * 80)
 
     log_it("Copy tree file count: %s" % (
-            rc.fs.read_dir_aggregates(path=parent_dir + "/test-qwalk-copy", max_entries=0)['total_files']))
+            rc.fs.read_dir_aggregates(path=parent_dir + "/test-qwalk-copy", 
+            max_entries=0)['total_files']))
 
     log_it("Delete directory: %s/%s" % (parent_dir if parent_dir != '/' else '', test_dir_name))
     rc.fs.delete_tree(id_ = test_dir['id'])
     rc.fs.delete_tree(path = parent_dir + "/test-qwalk-copy")
+    rc.fs.delete_tree(path = parent_dir + "/copy-from-snap")
 
 
 if __name__ == "__main__":

@@ -50,12 +50,13 @@ class CopyDirectory:
             file_name = os.path.basename(to_path)
             work_obj.run_class.create_folder(work_obj.rc, parent_path)
             if file_obj['type'] == "FS_FILE_TYPE_DIRECTORY":
-                work_obj.run_class.create_folder(work_obj.rc, file_obj['path'])
+                work_obj.run_class.create_folder(work_obj.rc, to_path)
                 results.append("DIRECTORY  : %s -> %s" % (file_obj['path'], to_path))
             else:
                 try:
                     new_f = work_obj.rc.fs.get_file_attr(path = to_path)
-                    if new_f['size'] == file_obj['size']:
+                    if new_f['size'] == file_obj['size'] and \
+                            new_f['modification_time'] == file_obj['modification_time']:
                         results.append("FILE EXISTS: %s -> %s" % (file_obj['path'], to_path))
                         continue
                     else:

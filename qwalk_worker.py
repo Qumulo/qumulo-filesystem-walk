@@ -180,7 +180,7 @@ class QWalkWorker:
             self.queue.put(d)
 
     def wait_for_complete(self):
-        time.sleep(1) # allow all worker processes to start.
+        time.sleep(0.5) # allow all worker processes to start.
         while True:
             self.print_status()
             time.sleep(WAIT_SECONDS)

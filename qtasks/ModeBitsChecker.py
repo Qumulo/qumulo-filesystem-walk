@@ -10,8 +10,9 @@ class ModeBitsChecker:
         action_count = 0
         mb_res = []
         for file_obj in file_list:
-            if file_obj["mode"][1] == '0':
+            if file_obj["mode"][-1] == '0':
                 mb_res.append("%(mode)s - %(path)s" % file_obj)
+
         with work_obj.result_file_lock:
             fw = io.open(ModeBitsChecker.FILE_NAME, "a", encoding='utf8')
             for line in mb_res:
