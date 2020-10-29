@@ -110,9 +110,9 @@ class QWalkWorker:
         self.rc = None
         if OVERRIDE_IPS is None:
             self.ips = self.rc_get_ips(self.creds)
-            log_it("Using the following Qumulo IPS: %s" % ','.join(self.ips))
         else:
             self.ips = re.split(r'[ ,]+', OVERRIDE_IPS)
+        log_it("Using the following Qumulo IPS: %s" % ','.join(self.ips))
         self.pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                          QWalkWorker.worker_main,
                                          (QWalkWorker.list_dir, self))
