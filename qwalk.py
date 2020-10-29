@@ -21,7 +21,7 @@ def main():
                               default='output-walk-log.txt')
     parser.add_argument('-c', help='Class to run. Options include: ' + \
                              'ChangeExtension, SummarizeOwners, DataReductionTest, ' + \
-                             'ModeBitsChecker, ApplyAcls, Search, CopyDirecotry'
+                             'ModeBitsChecker, ApplyAcls, Search, CopyDirectory'
                             , required=True)
     parser.add_argument('--snap', help='Snapshot id')
 

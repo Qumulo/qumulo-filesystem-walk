@@ -169,6 +169,7 @@ This will copy all items within the specified start directory `-d` and within th
 * **QWORKERS** - the number of python worker processes in the worker pool (default: 30 win, 60 other)
 * **QWAITSECONDS** - how often to wait between updates (default: 10 seconds)
 * **QMAXLEN** - max queue length for the workers (default: 100,000 win, 300,000 other)
+* **QOVERRIDEIPS** - Specify a custom list of Qumulo cluster IPs to use as API 'servers' (default: None)
 * **QUSEPICKLE** - the most expiremental of the knobs. Use pickled _files_ to pass batches around (default: false)
 
 Set any of these variables at the command line:

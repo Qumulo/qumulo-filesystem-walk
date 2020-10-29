@@ -27,6 +27,7 @@ MAX_QUEUE_LENGTH = 100000
 BATCH_SIZE = 200
 MAX_WORKER_COUNT = 40
 WAIT_SECONDS = 10
+OVERRIDE_IPS = None
 
 # smaller defaults for windows. can still be overridden
 if 'win' in sys.platform.lower():
@@ -43,6 +44,8 @@ if os.getenv('QUSEPICKLE'):
     USE_PICKLE = True
 if os.getenv('QMAXLEN'):
     MAX_QUEUE_LENGTH = int(os.getenv('QMAXLEN'))
+if os.getenv('QOVERRIDEIPS'):
+    OVERRIDE_IPS = os.getenv('QOVERRIDEIPS')
 
 
 def log_it(msg):
@@ -105,7 +108,11 @@ class QWalkWorker:
         self.result_file_lock = multiprocessing.Lock()
         self.start_time = time.time()
         self.rc = None
-        self.ips = self.rc_get_ips(self.creds)
+        if OVERRIDE_IPS is None:
+            self.ips = self.rc_get_ips(self.creds)
+            log_it("Using the following Qumulo IPS: %s" % ','.join(self.ips))
+        else:
+            self.ips = re.split(r'[ ,]+', OVERRIDE_IPS)
         self.pool = multiprocessing.Pool(MAX_WORKER_COUNT, 
                                          QWalkWorker.worker_main,
                                          (QWalkWorker.list_dir, self))
