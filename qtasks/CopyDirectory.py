@@ -1,6 +1,7 @@
 import re
 import os
 import io
+import sys
 import argparse
 
 class CopyDirectory:
@@ -26,6 +27,7 @@ class CopyDirectory:
                     self.folders[new_dir] = new_f['id']
                     continue
                 except:
+                    print("create folder exception: %s" sys.exc_info()[0])
                     pass
                 dir_path = '/'.join(levels[0:level-1])
                 if dir_path == '':
@@ -34,7 +36,7 @@ class CopyDirectory:
                 try:
                     new_f = rc.fs.create_directory(dir_path=dir_path, name=dir_name)
                 except:
-                    # this directory got created quick!
+                    print("create folder exception: %s" sys.exc_info()[0])
                     new_f = rc.fs.get_file_attr(path = new_dir)
                     self.folders[new_dir] = new_f['id']
 
@@ -62,12 +64,17 @@ class CopyDirectory:
                     else:
                         work_obj.rc.fs.delete(id_ = new_f['id'])
                 except:
+                    # print("File copy exception: %s %s" % (sys.exc_info()[0], file_obj['path']))
                     pass
-                work_obj.rc.fs.create_file(dir_path=parent_path, name=file_name)
-                work_obj.rc.fs.copy(source_id = file_obj["id"],
-                                    target_path = to_path, 
-                                    source_snapshot = work_obj.snap)
-                results.append("FILE CREATE: %s -> %s" % (file_obj['path'], to_path))
+                try:
+                    work_obj.rc.fs.create_file(dir_path=parent_path, name=file_name)
+                    work_obj.rc.fs.copy(source_id = file_obj["id"],
+                                        target_path = to_path, 
+                                        source_snapshot = work_obj.snap)
+                    results.append("FILE COPIED: %s -> %s" % (file_obj['path'], to_path))
+                except:
+                    # print("File copy exception: %s %s" % (sys.exc_info()[0], file_obj['path']))
+                    results.append("!!FILE COPY FAILED: %s -> %s" % (file_obj['path'], to_path))
 
         if len(results) > 0:
             with work_obj.result_file_lock:
