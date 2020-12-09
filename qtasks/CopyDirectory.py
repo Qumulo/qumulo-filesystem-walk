@@ -27,7 +27,7 @@ class CopyDirectory:
                     self.folders[new_dir] = new_f['id']
                     continue
                 except:
-                    print("get_file_attr exception: %s %s" % (sys.exc_info()[0], new_dir))
+                    # print("get_file_attr exception: %s %s" % (sys.exc_info()[0], new_dir))
                     pass
                 dir_path = '/'.join(levels[0:level-1])
                 if dir_path == '':
@@ -36,7 +36,7 @@ class CopyDirectory:
                 try:
                     new_f = rc.fs.create_directory(dir_path=dir_path, name=dir_name)
                 except:
-                    print("create_directory exception: %s %s/%s" % (sys.exc_info()[0], dir_path, dir_name))
+                    # print("create_directory exception: %s %s/%s" % (sys.exc_info()[0], dir_path, dir_name))
                     new_f = rc.fs.get_file_attr(path = new_dir)
                     self.folders[new_dir] = new_f['id']
 
