@@ -250,12 +250,17 @@ class QWalkWorker:
         ww.worker_id = int(re.match(r'.*?-([0-9])+', p_name).groups(1)[0])-1
         rc = RestClient(random.choice(ww.ips), 8000)
         rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+        client_start = time.time()
         ww.rc = rc
         file_list = []
         with ww.queue_lock:
             ww.active_workers.value += 1
         process_list = []
         while True:
+            if time.time() - client_start > 60*60:
+                # re-initialize rest client every hour
+                logging.debug("re-initilize Qumulo rest client")
+                ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
             try:
                 data = ww.queue.get(True, timeout=5)
                 if data["type"] == "list_dir":
@@ -296,8 +301,10 @@ class QWalkWorker:
                         ww.add_to_queue({"type":"process_list", "list": the_list})
                         process_list = []
                         the_list = None
+                    elif ww.queue_len.value > 0:
+                        log_exception("Queue empty exception, but queue length = %s." % (ww.queue_len.value))
                     else:
-                        log_exception("Queue empty (%s), process_list empty. No more work." % (ww.queue_len))
+                        log_exception("Queue empty, process_list empty. No more work.")
                         break
                 except:
                     log_exception("Queue empty process_list exception")
