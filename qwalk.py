@@ -4,8 +4,21 @@ import os
 import re
 import sys
 import time
+import logging
 import argparse
 from qwalk_worker import QWalkWorker
+
+def set_logging(level = None):
+    root = logging.getLogger()
+    if level:
+        root.setLevel(getattr(logging, level))
+    else:
+        root.setLevel(logging.CRITICAL)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(
+        logging.Formatter('%(asctime)s|%(levelname)8s| %(message)s', '%Y-%m-%d %H:%M:%S')
+    )
+    root.addHandler(console_handler)
 
 
 def main():
@@ -24,10 +37,16 @@ def main():
                              'ModeBitsChecker, ApplyAcls, Search, CopyDirectory'
                             , required=True)
     parser.add_argument('--snap', help='Snapshot id')
+    parser.add_argument("--debug",
+                        dest="log_level",
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        default='CRITICAL',
+                        help="Set the logging level")
 
     try:
         # Will fail with missing args, but unknown args will all fall through.
         args, other_args = parser.parse_known_args()
+        set_logging(args.log_level)
     except:
         print("-"*80)
         parser.print_help()

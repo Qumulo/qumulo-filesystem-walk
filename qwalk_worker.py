@@ -3,6 +3,7 @@ import re
 import sys
 import time
 import random
+import logging
 import traceback
 import multiprocessing
 import pickle
@@ -48,10 +49,20 @@ if os.getenv('QOVERRIDEIPS'):
     OVERRIDE_IPS = os.getenv('QOVERRIDEIPS')
 
 
+LOG_LOCK = multiprocessing.Lock()
+
 def log_it(msg):
     print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
     sys.stdout.flush()
 
+def log_exception(msg):
+    global LOG_LOCK
+    with LOG_LOCK:
+        logging.warning(msg.replace("\n", ""))
+        logging.warning(str(sys.exc_info()[0]).replace("\n", ""))
+        s = traceback.format_exc()
+        for line in s.split('\n'):
+            logging.warning(line)
 
 class QWalkWorker:
     # The class has gotten a bit too circular/interdependant with qtasks.py
@@ -193,6 +204,7 @@ class QWalkWorker:
             time.sleep(WAIT_SECONDS)
             if self.queue_len.value <= 0 and self.active_workers.value <= 0:
                 break
+
         log_it("Donestep- %9s dir|%10s inod|%10s actn|%4s dir/s|%6s fil/s" % (
                 self.dir_count.value,
                 self.file_count.value,
@@ -272,23 +284,27 @@ class QWalkWorker:
                 with ww.queue_lock:
                     ww.queue_len.value -= 1
             except queue.Empty:
-                if len(process_list) > 0:
-                    if USE_PICKLE:
-                        the_list = '%s-%s.pkl' % (time.time(), random.random())
-                        with open(the_list, 'wb') as fw:
-                            pickle.dump(process_list, fw)
+                try:
+                    if len(process_list) > 0:
+                        log_exception("Queue empty, process_list > 0")
+                        if USE_PICKLE:
+                            the_list = '%s-%s.pkl' % (time.time(), random.random())
+                            with open(the_list, 'wb') as fw:
+                                pickle.dump(process_list, fw)
+                        else:
+                            the_list = process_list
+                        ww.add_to_queue({"type":"process_list", "list": the_list})
+                        process_list = []
+                        the_list = None
                     else:
-                        the_list = process_list
-                    ww.add_to_queue({"type":"process_list", "list": the_list})
-                    process_list = []
-                    the_list = None
-                else:
+                        log_exception("Queue empty (%s), process_list empty. No more work." % (ww.queue_len))
+                        break
+                except:
+                    log_exception("Queue empty process_list exception")
                     break
             except:
                 # this is not expected
-                log_it("!! Exception !!")
-                log_it(sys.exc_info())
-                traceback.print_exc(file=sys.stdout)
+                log_exception("Exception in worker process")
         with ww.queue_lock:
             ww.active_workers.value -= 1
 
@@ -326,47 +342,57 @@ class QWalkWorker:
                     ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
                 continue
             except:
-                print("UNHANDLED EXCEPTION! - Stop reading directory")
+                log_exception("UNHANDLED EXCEPTION! - Stop reading directory")
                 break
-            for dd in res['files']:
-                dd["dir_id"] = d['path_id']
-                if dd['type'] == 'FS_FILE_TYPE_DIRECTORY':
-                    if ww.queue_len.value > MAX_QUEUE_LENGTH:
-                        leftovers.append(dd['id'])
-                    else:
-                        ww.add_to_queue({"type":"list_dir", "path_id": dd['id'], "snapshot":d["snapshot"]})
-                file_count += 1
-            file_list += res['files']
+            try:
+                dd = None
+                for dd in res['files']:
+                    dd["dir_id"] = d['path_id']
+                    if dd['type'] == 'FS_FILE_TYPE_DIRECTORY':
+                        if ww.queue_len.value > MAX_QUEUE_LENGTH:
+                            leftovers.append(dd['id'])
+                        else:
+                            ww.add_to_queue({"type":"list_dir", "path_id": dd['id'], "snapshot":d["snapshot"]})
+                    file_count += 1
+                file_list += res['files']
+            except:
+                log_exception("UNHANDLED EXCEPTION reading directory entries")
 
             # handle very large directories dynamically
-            if len(file_list) >= BATCH_SIZE:
-                process_list = []
-                while len(file_list) > 0:
-                    process_list.append(file_list.pop())
-                    if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
-                        if USE_PICKLE:
-                            the_list = '%s-%s.pkl' % (time.time(), random.random())
-                            with open(the_list, 'wb') as fw:
-                                pickle.dump(process_list, fw)
-                        else:
-                            the_list = process_list
-                        ww.add_to_queue({"type":"process_list", "list": the_list})
-                        process_list = []
-                        the_list = None
+            try:
+                if len(file_list) >= BATCH_SIZE:
+                    process_list = []
+                    while len(file_list) > 0:
+                        process_list.append(file_list.pop())
+                        if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
+                            if USE_PICKLE:
+                                the_list = '%s-%s.pkl' % (time.time(), random.random())
+                                with open(the_list, 'wb') as fw:
+                                    pickle.dump(process_list, fw)
+                            else:
+                                the_list = process_list
+                            ww.add_to_queue({"type":"process_list", "list": the_list})
+                            process_list = []
+                            the_list = None
 
-                with ww.count_lock:
-                    ww.file_count.value += file_count
-                file_count = 0
-                file_list = []
+                    with ww.count_lock:
+                        ww.file_count.value += file_count
+                    file_count = 0
+                    file_list = []
+            except:
+                log_exception("UNHANDLED EXCEPTION while working with a large directory")
 
-            next_uri = res['paging']['next']
-            if len(leftovers) > 0:
-                with ww.write_file_lock:
-                    fw = open("new-queue.txt", "a")
-                    fw.write('\n'.join(leftovers))
-                    fw.write('\n')
-                    fw.close()
-                    leftovers = []
+            try:
+                next_uri = res['paging']['next']
+                if len(leftovers) > 0:
+                    with ww.write_file_lock:
+                        fw = open("new-queue.txt", "a")
+                        fw.write('\n'.join(leftovers))
+                        fw.write('\n')
+                        fw.close()
+                        leftovers = []
+            except:
+                log_exception("UNHANDLED EXCEPTION handling leftover directory entries")
 
         with ww.count_lock:
             ww.dir_count.value += 1
