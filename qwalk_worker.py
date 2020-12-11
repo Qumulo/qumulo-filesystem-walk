@@ -3,7 +3,6 @@ import re
 import sys
 import time
 import random
-import logging
 import traceback
 import multiprocessing
 import pickle
@@ -29,6 +28,7 @@ BATCH_SIZE = 200
 MAX_WORKER_COUNT = 40
 WAIT_SECONDS = 10
 OVERRIDE_IPS = None
+DEBUG = False
 
 # smaller defaults for windows. can still be overridden
 if 'win' in sys.platform.lower():
@@ -47,6 +47,8 @@ if os.getenv('QMAXLEN'):
     MAX_QUEUE_LENGTH = int(os.getenv('QMAXLEN'))
 if os.getenv('QOVERRIDEIPS'):
     OVERRIDE_IPS = os.getenv('QOVERRIDEIPS')
+if os.getenv('QDEBUG'):
+    DEBUG = True
 
 
 LOG_LOCK = multiprocessing.Lock()
@@ -57,12 +59,13 @@ def log_it(msg):
 
 def log_exception(msg):
     global LOG_LOCK
-    with LOG_LOCK:
-        logging.warning(msg.replace("\n", ""))
-        logging.warning(str(sys.exc_info()[0]).replace("\n", ""))
-        s = traceback.format_exc()
-        for line in s.split('\n'):
-            logging.warning(line)
+    if DEBUG:
+        with LOG_LOCK:
+            log_it(msg.replace("\n", ""))
+            log_it(str(sys.exc_info()[0]).replace("\n", ""))
+            s = traceback.format_exc()
+            for line in s.split('\n'):
+                log_it(line)
 
 class QWalkWorker:
     # The class has gotten a bit too circular/interdependant with qtasks.py
@@ -259,7 +262,7 @@ class QWalkWorker:
         while True:
             if time.time() - client_start > 60*60:
                 # re-initialize rest client every hour
-                logging.debug("re-initilize Qumulo rest client")
+                log_it("re-initialize Qumulo rest client")
                 ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
             try:
                 data = ww.queue.get(True, timeout=5)
@@ -291,7 +294,7 @@ class QWalkWorker:
             except queue.Empty:
                 try:
                     if len(process_list) > 0:
-                        log_exception("Queue empty, process_list > 0")
+                        # log_exception("Queue empty, process_list > 0")
                         if USE_PICKLE:
                             the_list = '%s-%s.pkl' % (time.time(), random.random())
                             with open(the_list, 'wb') as fw:
@@ -302,9 +305,10 @@ class QWalkWorker:
                         process_list = []
                         the_list = None
                     elif ww.queue_len.value > 0:
-                        log_exception("Queue empty exception, but queue length = %s." % (ww.queue_len.value))
+                        # log_exception("Queue empty exception, but queue length = %s." % (ww.queue_len.value))
+                        pass
                     else:
-                        log_exception("Queue empty, process_list empty. No more work.")
+                        # log_exception("Queue empty, process_list empty. No more work.")
                         break
                 except:
                     log_exception("Queue empty process_list exception")
