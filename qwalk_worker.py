@@ -262,8 +262,8 @@ class QWalkWorker:
         while True:
             if time.time() - client_start > 60*60:
                 # re-initialize rest client every hour
-                log_it("re-initialize Qumulo rest client")
                 ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+                # log_it("re-initialized Qumulo rest client for worker")
             try:
                 data = ww.queue.get(True, timeout=5)
                 if data["type"] == "list_dir":
