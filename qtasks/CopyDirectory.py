@@ -110,7 +110,8 @@ class CopyDirectory:
                                 link_f = io.BytesIO()
                                 work_obj.rc.fs.read_file(snapshot=work_obj.snap, id_=file_obj["id"], file_=link_f)
                                 link_f.seek(0)
-                                new_f = work_obj.rc.fs.create_symlink(target = link_f.read(), dir_path=parent_path, name=file_name)
+                                target = bytes.decode(link_f.read()).replace('\x00', '')
+                                new_f = work_obj.rc.fs.create_symlink(target=target, dir_path=parent_path, name=file_name)
                                 link_f.close()
                             else:
                                 log_it("Creating file: %s" % to_path)
