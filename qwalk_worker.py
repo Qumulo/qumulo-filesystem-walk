@@ -24,16 +24,12 @@ except:
 
 USE_PICKLE = False
 MAX_QUEUE_LENGTH = 100000
-BATCH_SIZE = 200
-MAX_WORKER_COUNT = 40
+BATCH_SIZE = 100
+MAX_WORKER_COUNT = 10
 WAIT_SECONDS = 10
 OVERRIDE_IPS = None
 DEBUG = False
 
-# smaller defaults for windows. can still be overridden
-if 'win' in sys.platform.lower():
-    MAX_WORKER_COUNT = 10
-    BATCH_SIZE = 100
 
 if os.getenv('QBATCHSIZE'):
     BATCH_SIZE = int(os.getenv('QBATCHSIZE'))
@@ -332,10 +328,10 @@ class QWalkWorker:
                     if d['snapshot'] is not None:
                         res = ww.rc.fs.read_directory(id_=d['path_id'], 
                                                       snapshot=d['snapshot'], 
-                                                      page_size=1000)
+                                                      page_size=100)
                     else:
                         res = ww.rc.fs.read_directory(id_=d['path_id'], 
-                                                      page_size=1000)
+                                                      page_size=100)
                 elif next_uri == 'directory_deleted':
                     break
                 elif next_uri != '':

@@ -170,10 +170,10 @@ This will copy all items within the specified start directory `-d` and within th
 
 ## Parameters, knobs, tweaks, mostly for working on Windows
 
-* **QBATCHSIZE** - Batch size of files and directories processed by the qtask jobs (default: 100 windows, 400 other)
-* **QWORKERS** - Number of python worker processes in the worker pool (default: 30 windows, 60 other)
+* **QBATCHSIZE** - Batch size of files and directories processed by the qtask jobs (default: 100)
+* **QWORKERS** - Number of python worker processes in the worker pool (default: 10 windows)
 * **QWAITSECONDS** - How long to wait between command line updates (default: 10 seconds)
-* **QMAXLEN** - Max queue length for the workers (default: 100,000 windows, 300,000 other)
+* **QMAXLEN** - Max queue length for the workers (default: 100,000)
 * **QDEBUG** - More verbose debugging messages.  (default: None)
 * **QOVERRIDEIPS** - Specify a custom list of Qumulo cluster IPs to use as API 'servers' (default: None)
 * **QUSEPICKLE** - The most expiremental of the knobs. Use pickled _files_ to pass batches around (default: None)
