@@ -21,10 +21,10 @@ class ModeBitsChecker:
             work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(_work_obj):
         if os.path.exists(ModeBitsChecker.FILE_NAME):
             os.remove(ModeBitsChecker.FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj):
         return

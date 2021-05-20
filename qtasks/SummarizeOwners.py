@@ -27,7 +27,7 @@ class SummarizeOwners:
             work_obj.action_count.value += 1
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj):
         print("-" * 80)
         fr = io.open(SummarizeOwners.FILE_NAME, "r", encoding="utf8")
         owners = {}
@@ -56,6 +56,6 @@ class SummarizeOwners:
         print("-" * 80)
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(_work_obj):
         if os.path.exists(SummarizeOwners.FILE_NAME):
             os.remove(SummarizeOwners.FILE_NAME)

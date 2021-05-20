@@ -102,10 +102,10 @@ class DataReductionTest:
             work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(_work_obj):
         if os.path.exists(DataReductionTest.FILE_NAME):
             os.remove(DataReductionTest.FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj):
         return
