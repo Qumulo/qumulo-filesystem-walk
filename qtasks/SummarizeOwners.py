@@ -25,7 +25,6 @@ class SummarizeOwners:
                 fw.write("%s|%s|%s\n" % (k, v["count"], v["size"]))
             fw.close()
             work_obj.action_count.value += 1
-        return None
 
     @staticmethod
     def work_done(work_obj):

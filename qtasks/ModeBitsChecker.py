@@ -19,7 +19,6 @@ class ModeBitsChecker:
                 fw.write(line + "\n")
             fw.close()
             work_obj.action_count.value += action_count
-        return None
 
     @staticmethod
     def work_start(work_obj):

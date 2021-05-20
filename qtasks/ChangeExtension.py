@@ -26,6 +26,7 @@ class ChangeExtension:
                     dir_id=file_obj["dir_id"],
                 )
             return "%s: %s -> %s" % (dir_name, from_file_name, to_file_name)
+        return None
 
     @staticmethod
     def every_batch(file_list, work_obj):
