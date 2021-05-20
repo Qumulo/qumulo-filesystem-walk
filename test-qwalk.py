@@ -54,7 +54,7 @@ def main():
     parser.add_argument("-d", help="Test Directory", default="/test-qwalk-parent")
 
     try:
-        args, other_args = parser.parse_known_args()
+        args, _other_args = parser.parse_known_args()
     except:
         print("-" * 80)
         parser.print_help()
@@ -96,7 +96,7 @@ def main():
     rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode="0000")
     log_it("Write data to files")
     f_size = 1
-    for k, v in f.items():
+    for _k, v in f.items():
         fw = io.BytesIO(b"0123456789" * f_size)
         fw.seek(0)
         rc.fs.write_file(data_file=fw, id_=v["id"])

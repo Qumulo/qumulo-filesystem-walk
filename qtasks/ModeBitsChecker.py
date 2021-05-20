@@ -7,7 +7,6 @@ class ModeBitsChecker:
 
     @staticmethod
     def every_batch(file_list, work_obj):
-        res = []
         action_count = 0
         mb_res = []
         for file_obj in file_list:

@@ -48,7 +48,7 @@ class SummarizeOwners:
                 owners[owner]["count"] += count
                 owners[owner]["size"] += size
         fr.close()
-        for k, v in owners.items():
+        for _k, v in owners.items():
             print(
                 "%(owner)12s (%(id_type)10s/%(id_value)48s): %(count)9s / %(size)15s"
                 % v
