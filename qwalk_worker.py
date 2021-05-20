@@ -10,13 +10,24 @@ from qumulo.rest_client import RestClient
 from qumulo.lib.request import RequestError
 
 # Import all defined classes
-from qtasks.ChangeExtension import *
-from qtasks.DataReductionTest import *
-from qtasks.ModeBitsChecker import *
-from qtasks.Search import *
-from qtasks.SummarizeOwners import *
-from qtasks.ApplyAcls import *
-from qtasks.CopyDirectory import *
+from qtasks.ChangeExtension import ChangeExtension
+from qtasks.DataReductionTest import DataReductionTest
+from qtasks.ModeBitsChecker import ModeBitsChecker
+from qtasks.Search import Search
+from qtasks.SummarizeOwners import SummarizeOwners
+from qtasks.ApplyAcls import ApplyAcls
+from qtasks.CopyDirectory import CopyDirectory
+
+QTASKS = {
+    "ChangeExtension": ChangeExtension,
+    "DataReductionTest": DataReductionTest,
+    "ModeBitsChecker": ModeBitsChecker,
+    "Search": Search,
+    "SummarizeOwners": SummarizeOwners,
+    "ApplyAcls": ApplyAcls,
+    "CopyDirectory": CopyDirectory,
+}
+
 
 try:
     import queue  # python2/3

@@ -12,13 +12,13 @@ os.environ["QWAITSECONDS"] = "5"
 
 from qwalk_worker import QWalkWorker, log_it
 from qumulo.rest_client import RestClient
-from qtasks.ChangeExtension import *
-from qtasks.DataReductionTest import *
-from qtasks.ModeBitsChecker import *
-from qtasks.Search import *
-from qtasks.SummarizeOwners import *
-from qtasks.ApplyAcls import *
-from qtasks.CopyDirectory import *
+from qtasks.ChangeExtension import ChangeExtension
+from qtasks.DataReductionTest import DataReductionTest
+from qtasks.ModeBitsChecker import ModeBitsChecker
+from qtasks.Search import Search
+from qtasks.SummarizeOwners import SummarizeOwners
+from qtasks.ApplyAcls import ApplyAcls
+from qtasks.CopyDirectory import CopyDirectory
 
 
 LOG_FILE_NAME = "test-qwalk-log-file.txt"
