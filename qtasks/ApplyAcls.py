@@ -1,7 +1,5 @@
-import re
 import os
 import io
-import sys
 import argparse
 import json
 import qumulo.commands.fs as fs

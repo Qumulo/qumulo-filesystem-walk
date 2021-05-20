@@ -4,7 +4,6 @@ import re
 import os
 import io
 import sys
-import time
 import argparse
 
 os.environ["QWORKERS"] = "2"
