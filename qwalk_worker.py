@@ -84,13 +84,6 @@ class QWalkWorker:
     def __init__(
         self, creds, run_class, start_path, snap, make_changes, log_file, counters=None
     ):
-        is_initialized = False
-        try:
-            if self.o_start_time:
-                is_initialized = True
-        except:
-            pass
-
         self.snap = snap
         self.o_start_time = time.time()
         self.dir_counter = 0
