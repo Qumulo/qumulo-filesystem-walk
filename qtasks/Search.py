@@ -3,15 +3,19 @@ import os
 import io
 import argparse
 
+from typing import Sequence
+
+from . import FileInfo, Worker
+
 
 class Search:
-    def __init__(self, args):
+    def __init__(self, in_args: Sequence[str]):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--re", help="", dest="search_re")
         parser.add_argument("--str", help="", dest="search_str")
         parser.add_argument("--itemtype", help="")
         parser.add_argument("--cols", help="")
-        args = parser.parse_args(args)
+        args = parser.parse_args(in_args)
         self.itemtype = None
         self.search_str = None
         self.search_re = None
@@ -26,7 +30,7 @@ class Search:
             self.itemtype = args.itemtype
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["Search"]) -> None:
         results = []
         for file_obj in file_list:
             found = False
@@ -68,6 +72,7 @@ class Search:
                 ):
                     line = "|".join(
                         [
+                            # TODO: suppress mypy here or make this a choice option
                             file_obj[col] if col in file_obj else col
                             for col in work_obj.run_class.cols
                         ]
@@ -76,17 +81,17 @@ class Search:
 
         if len(results) > 0:
             with work_obj.result_file_lock:
-                fw = io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8")
+                f = io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8")
                 for d in results:
-                    fw.write("%s\n" % d)
-                fw.close()
+                    f.write("%s\n" % d)
+                f.close()
                 work_obj.action_count.value += len(results)
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(work_obj: Worker["Search"]) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj: Worker["Search"]) -> None:
         pass

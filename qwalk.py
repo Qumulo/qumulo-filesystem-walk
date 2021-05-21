@@ -6,7 +6,7 @@ import argparse
 from qwalk_worker import QWalkWorker
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description="Walk Qumulo filesystem and do that thing."
     )
@@ -38,7 +38,17 @@ def main():
         print("-" * 80)
         sys.exit(0)
 
-    QWalkWorker.run_all(args, other_args)
+    QWalkWorker.run_all(
+        args.s,
+        args.u,
+        args.p,
+        args.d,
+        args.g,
+        args.l,
+        args.c,
+        args.snap,
+        other_args,
+    )
 
 
 if __name__ == "__main__":

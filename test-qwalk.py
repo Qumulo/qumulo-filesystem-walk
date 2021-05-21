@@ -9,7 +9,9 @@ import argparse
 os.environ["QWORKERS"] = "2"
 os.environ["QWAITSECONDS"] = "5"
 
-from qwalk_worker import QWalkWorker, log_it
+from typing import Sequence, Optional
+
+from qwalk_worker import Creds, QWalkWorker, log_it
 from qumulo.rest_client import RestClient
 from qtasks.ChangeExtension import ChangeExtension
 from qtasks.DataReductionTest import DataReductionTest
@@ -23,16 +25,16 @@ from qtasks.CopyDirectory import CopyDirectory
 LOG_FILE_NAME = "test-qwalk-log-file.txt"
 
 
-def read_full_tree_flat(rc, path):
+def read_full_tree_flat(rc: RestClient, path: str) -> Sequence[str]:
     items = []
     for d in rc.fs.tree_walk_preorder(path=path):
         items.append(d["name"])
     return sorted(items)
 
 
-def test_search(creds, args, search, snapshot=None):
+def test_search(creds: Creds, start_path: str, search: Sequence[str], snapshot: Optional[str] = None) -> None:
     log_it("Search: %s" % search)
-    w = QWalkWorker(creds, Search(search), args.d, snapshot, None, LOG_FILE_NAME, None)
+    w = QWalkWorker(creds, Search(search), start_path, snapshot, None, LOG_FILE_NAME, None)
     w.run()
     if os.path.exists(LOG_FILE_NAME):
         content = re.sub(r"[\r\n]+", " ", open(LOG_FILE_NAME).read())
@@ -42,7 +44,7 @@ def test_search(creds, args, search, snapshot=None):
         log_it("NOTFOUND: Search failure: %s" % search)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Test the qwalk.py script")
     parser.add_argument("-s", help="Qumulo hostname", required=True)
     parser.add_argument(
@@ -63,7 +65,7 @@ def main():
 
     # Everything will happen in a new subdirectory.
     test_dir_name = "test-qwalk"
-    creds = {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}
+    creds: Creds = {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}
     log_it("Log in to: %s" % (args.s))
     rc = RestClient(creds["QHOST"], 8000)
     rc.login(creds["QUSER"], creds["QPASS"])
@@ -166,7 +168,7 @@ def main():
     log_it("Test snapshot search after deleting file")
     snap = rc.snapshot.create_snapshot(name="test-qwalk", id_=test_dir["id"])
     rc.fs.delete(id_=f["pasta"]["id"])
-    test_search(creds, args, ["--str", "pasta"], snap["id"])
+    test_search(creds, args.d, ["--str", "pasta"], snap["id"])
 
     log_it("Test snapshot recover")
     w = QWalkWorker(
@@ -222,7 +224,7 @@ def main():
     w.run()
     w.run_class.work_done(w)
 
-    test_search(creds, args, ["--re", ".*jpeg"])
+    test_search(creds, args.d, ["--re", ".*jpeg"])
     log_it("Start: ChangeExtension: 'jpeg' to 'jpg'")
     w = QWalkWorker(
         creds,
@@ -235,13 +237,13 @@ def main():
     )
     w.run()
     log_it("Done : ChangeExtension: 'jpeg' to 'jpg'")
-    test_search(creds, args, ["--re", ".*jpeg"])
+    test_search(creds, args.d, ["--re", ".*jpeg"])
     print("-" * 80)
-    test_search(creds, args, ["--re", ".*[.]txt"])
+    test_search(creds, args.d, ["--re", ".*[.]txt"])
     print("-" * 80)
-    test_search(creds, args, ["--str", "rose"])
+    test_search(creds, args.d, ["--str", "rose"])
     print("-" * 80)
-    test_search(creds, args, ["--str", "pig"])
+    test_search(creds, args.d, ["--str", "pig"])
     print("-" * 80)
 
     log_it(

@@ -4,16 +4,20 @@ import argparse
 import json
 import qumulo.commands.fs as fs
 import qumulo.rest.fs as rest_fs
+
 from argparse import Namespace
+from typing import Optional, Sequence
+
+from . import FileInfo, Worker
 
 
 class ApplyAcls:
-    def __init__(self, args=None):
+    def __init__(self, in_args: Optional[Sequence[str]] = None):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--replace_acls", help="")
         parser.add_argument("--add_entry", help="")
         parser.add_argument("--dirs_only", action="store_true", help="")
-        args = parser.parse_args(args)
+        args = parser.parse_args(in_args)
         self.replace_acls = None
         self.add_entry = None
         self.dirs_only = False
@@ -35,7 +39,7 @@ class ApplyAcls:
             )
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["ApplyAcls"]) -> None:
         results = []
         action_count = 0
         for file_obj in file_list:
@@ -79,10 +83,10 @@ class ApplyAcls:
                 work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(work_obj: Worker["ApplyAcls"]) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj: Worker["ApplyAcls"]) -> None:
         pass

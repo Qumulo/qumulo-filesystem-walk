@@ -5,19 +5,25 @@ import time
 import argparse
 import traceback
 
+from typing import Dict, Optional, Sequence
+
+from . import FileInfo, Worker
+from qumulo.rest_client import RestClient
+
+
 DEBUG = False
 if os.getenv("QDEBUG"):
     DEBUG = True
 
 
-def log_it(msg):
+def log_it(msg: str) -> None:
     if DEBUG:
         print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
         sys.stdout.flush()
 
 
 class CopyDirectory:
-    def __init__(self, args):
+    def __init__(self, in_args: Sequence[str]):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--to_dir", help="destination directory")
         parser.add_argument(
@@ -28,10 +34,10 @@ class CopyDirectory:
             help="will not preserve permissions or timestamps",
             action="store_true",
         )
-        args = parser.parse_args(args)
-        self.to_dir = None
-        self.skip_hardlinks = None
-        self.no_preserve = None
+        args = parser.parse_args(in_args)
+        self.to_dir: Optional[str] = None
+        self.skip_hardlinks: Optional[bool] = None
+        self.no_preserve: Optional[bool] = None
         self.cols = ["path"]
         if args.to_dir:
             self.to_dir = args.to_dir
@@ -39,9 +45,9 @@ class CopyDirectory:
             self.skip_hardlinks = args.skip_hardlinks
         if args.no_preserve:
             self.no_preserve = args.no_preserve
-        self.folders = {}
+        self.folders: Dict[str, str] = {}
 
-    def create_folder(self, rc, path):
+    def create_folder(self, rc: RestClient, path: str) -> str:
         if path in self.folders:
             return self.folders[path]
         levels = path.split("/")
@@ -77,10 +83,11 @@ class CopyDirectory:
         return self.folders[path]
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["CopyDirectory"]) -> None:
         results = []
         for file_obj in file_list:
             try:
+                # TODO: to_dir could be None
                 to_path = file_obj["path"].replace(
                     work_obj.start_path, work_obj.run_class.to_dir
                 )
@@ -257,10 +264,10 @@ class CopyDirectory:
             log_it("Unable to save results exception: %s" % str(sys.exc_info()))
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(work_obj: Worker["CopyDirectory"]) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj: Worker["CopyDirectory"]) -> None:
         pass

@@ -9,6 +9,10 @@ import pickle
 from qumulo.rest_client import RestClient
 from qumulo.lib.request import RequestError
 
+from typing import Callable, Sequence, Optional, Union, List
+from typing_extensions import Literal, TypedDict
+
+from qtasks import Worker
 # Import all defined classes
 from qtasks.ChangeExtension import ChangeExtension
 from qtasks.DataReductionTest import DataReductionTest
@@ -29,6 +33,9 @@ QTASKS = {
 }
 
 
+TaskClass = Union[ChangeExtension, DataReductionTest, ModeBitsChecker, Search, SummarizeOwners, ApplyAcls, CopyDirectory]
+
+
 try:
     import queue  # python2/3
 except:
@@ -42,19 +49,23 @@ WAIT_SECONDS = 10
 OVERRIDE_IPS = None
 DEBUG = False
 
-
-if os.getenv("QBATCHSIZE"):
-    BATCH_SIZE = int(os.getenv("QBATCHSIZE"))
-if os.getenv("QWORKERS"):
-    MAX_WORKER_COUNT = int(os.getenv("QWORKERS"))
-if os.getenv("QWAITSECONDS"):
-    WAIT_SECONDS = int(os.getenv("QWAITSECONDS"))
+_QBATCHSIZE = os.getenv("QBATCHSIZE")
+if _QBATCHSIZE:
+    BATCH_SIZE = int(_QBATCHSIZE)
+_QWORKERS = os.getenv("QWORKERS")
+if _QWORKERS:
+    MAX_WORKER_COUNT = int(_QWORKERS)
+_QWAITSECONDS = os.getenv("QWAITSECONDS")
+if _QWAITSECONDS:
+    WAIT_SECONDS = int(_QWAITSECONDS)
 if os.getenv("QUSEPICKLE"):
     USE_PICKLE = True
-if os.getenv("QMAXLEN"):
-    MAX_QUEUE_LENGTH = int(os.getenv("QMAXLEN"))
-if os.getenv("QOVERRIDEIPS"):
-    OVERRIDE_IPS = os.getenv("QOVERRIDEIPS")
+_QMAXLEN = os.getenv("QMAXLEN")
+if _QMAXLEN:
+    MAX_QUEUE_LENGTH = int(_QMAXLEN)
+_QOVERRIDEIPS = os.getenv("QOVERRIDEIPS")
+if _QOVERRIDEIPS:
+    OVERRIDE_IPS = _QOVERRIDEIPS
 if os.getenv("QDEBUG"):
     DEBUG = True
 
@@ -62,12 +73,12 @@ if os.getenv("QDEBUG"):
 LOG_LOCK = multiprocessing.Lock()
 
 
-def log_it(msg):
+def log_it(msg: str) -> None:
     print("%s: %s" % (time.strftime("%Y-%m-%d %H:%M:%S"), msg))
     sys.stdout.flush()
 
 
-def log_exception(msg):
+def log_exception(msg: str) -> None:
     global LOG_LOCK
     if DEBUG:
         with LOG_LOCK:
@@ -78,9 +89,38 @@ def log_exception(msg):
                 log_it(line)
 
 
-class QWalkWorker:
+
+class Creds(TypedDict):
+    QHOST: str
+    QUSER: str
+    QPASS: str
+
+
+class Counters(TypedDict):
+    o_start_time: float
+    dir_counter: int
+    file_counter: int
+    queue_len: int
+    action_count: int
+    active_workers: int
+    dir_count: int
+    file_count: int
+
+
+class ProcessListArgs(TypedDict):
+    type: Literal["process_list"]
+    list: Union[str, Sequence[str]]
+
+
+class ListDirArgs(TypedDict):
+    type: Literal["list_dir"]
+    path_id: str
+    snapshot: Optional[str]
+
+
+class QWalkWorker(Worker[TaskClass]):
     # The class has gotten a bit too circular/interdependant with qtasks.py
-    def get_counters(self):
+    def get_counters(self) -> Counters:
         return {
             "o_start_time": self.o_start_time,
             "dir_counter": self.dir_counter,
@@ -93,7 +133,14 @@ class QWalkWorker:
         }
 
     def __init__(
-        self, creds, run_class, start_path, snap, make_changes, log_file, counters=None
+        self,
+        creds: Creds,
+        run_class: TaskClass,
+        start_path: str,
+        snap: Optional[str],
+        make_changes: bool,
+        log_file: str,
+        counters: Optional[Counters] = None,
     ):
         self.snap = snap
         self.o_start_time = time.time()
@@ -117,17 +164,17 @@ class QWalkWorker:
 
         self.creds = creds
         self.run_class = run_class
-        self.worker_id = None
+        self.worker_id: Optional[int] = None
         self.MAKE_CHANGES = make_changes
         self.LOG_FILE_NAME = log_file
         self.start_path = "/" if start_path == "/" else re.sub("/$", "", start_path)
-        self.queue = multiprocessing.Queue()
+        self.queue: multiprocessing.Queue[Union[ProcessListArgs, ListDirArgs]] = multiprocessing.Queue()  # pylint: disable=unsubscriptable-object
         self.queue_lock = multiprocessing.Lock()
         self.count_lock = multiprocessing.Lock()
         self.write_file_lock = multiprocessing.Lock()
         self.result_file_lock = multiprocessing.Lock()
         self.start_time = time.time()
-        self.rc = None
+        self.rc: RestClient = None
         if OVERRIDE_IPS is None:
             self.ips = self.rc_get_ips(self.creds)
         else:
@@ -137,7 +184,7 @@ class QWalkWorker:
             MAX_WORKER_COUNT, QWalkWorker.worker_main, (QWalkWorker.list_dir, self)
         )
 
-    def rc_get_ips(self, creds):
+    def rc_get_ips(self, creds: Creds) -> Sequence[str]:
         rc = RestClient(creds["QHOST"], 8000)
         rc.login(creds["QUSER"], creds["QPASS"])
         ips = []
@@ -145,8 +192,9 @@ class QWalkWorker:
             ips.append(d["network_statuses"][0]["address"])
         return ips
 
-    def run(self):
+    def run(self) -> None:
         if not os.path.exists("old-queue.txt"):
+            # TODO: resolve circular typing
             self.run_class.work_start(self)
             rc = RestClient(self.creds["QHOST"], 8000)
             rc.login(self.creds["QUSER"], self.creds["QPASS"])
@@ -199,7 +247,7 @@ class QWalkWorker:
         del self.pool
         del self.queue
 
-    def print_status(self):
+    def print_status(self) -> None:
         log_it(
             "Update  - %9s dir|%10s inod|%10s actn|%4s dir/s|%6s fil/s|%8s q"
             % (
@@ -221,12 +269,12 @@ class QWalkWorker:
         self.file_counter = self.file_count.value
         self.start_time = time.time()
 
-    def add_to_queue(self, d):
+    def add_to_queue(self, d: Union[ProcessListArgs, ListDirArgs]) -> None:
         with self.queue_lock:
             self.queue_len.value += 1
             self.queue.put(d)
 
-    def wait_for_complete(self):
+    def wait_for_complete(self) -> None:
         time.sleep(0.5)  # allow all worker processes to start.
         while True:
             self.print_status()
@@ -246,18 +294,28 @@ class QWalkWorker:
         )
 
     @staticmethod
-    def run_all(args, other_args=None):
+    def run_all(
+        hostname: str,
+        username: str,
+        password: str,
+        start_dir: str,
+        make_changes: bool,
+        log_file: str,
+        run_class_name: str,
+        snapshot_id: Optional[str],
+        other_args: Optional[Sequence[str]] = None,
+    ) -> None:
         if other_args:
-            run_class = eval(args.c)(other_args)
+            run_class = eval(run_class_name)(other_args)
         else:
-            run_class = eval(args.c)
+            run_class = eval(run_class_name)
         w = QWalkWorker(
-            {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p},
+            {"QHOST": hostname, "QUSER": username, "QPASS": password},
             run_class,
-            args.d,  # starting directory
-            args.snap,
-            args.g,
-            args.l,
+            start_dir,  # starting directory
+            snapshot_id,
+            make_changes,
+            log_file,
             None,
         )
         w.run()
@@ -266,26 +324,27 @@ class QWalkWorker:
             counters = w.get_counters()
             del w
             w = QWalkWorker(
-                {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p},
+                {"QHOST": hostname, "QUSER": username, "QPASS": password},
                 run_class,
-                args.d,  # starting directory
-                args.snap,
-                args.g,
-                args.l,
+                start_dir,  # starting directory
+                snapshot_id,
+                make_changes,
+                log_file,
                 counters,
             )
             w.run()
+        # TODO: resolve circular typing
         w.run_class.work_done(w)
 
     @staticmethod
-    def worker_main(func, ww):
+    def worker_main(func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker") -> None:
         p_name = multiprocessing.current_process().name
         ww.worker_id = int(re.match(r".*?-([0-9])+", p_name).groups(1)[0]) - 1
         rc = RestClient(random.choice(ww.ips), 8000)
         rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
         client_start = time.time()
         ww.rc = rc
-        file_list = []
+        file_list: List[str] = []
         with ww.queue_lock:
             ww.active_workers.value += 1
         process_list = []
@@ -302,23 +361,30 @@ class QWalkWorker:
                         process_list.append(file_list.pop())
                         if len(process_list) >= BATCH_SIZE:
                             if USE_PICKLE:
-                                the_list = "%s-%s.pkl" % (time.time(), random.random())
-                                with open(the_list, "wb") as fw:
+                                filename_1 = "%s-%s.pkl" % (time.time(), random.random())
+                                with open(filename_1, "wb") as fw:
                                     pickle.dump(process_list, fw)
+                                the_list_1 = filename_1
                             else:
-                                the_list = process_list
-                            ww.add_to_queue({"type": "process_list", "list": the_list})
+                                the_list_1 = process_list
+                            ww.add_to_queue({"type": "process_list", "list": the_list_1})
                             process_list = []
-                            the_list = None
+                            # the_list_1 = None
                 elif data["type"] == "process_list":
                     if USE_PICKLE:
-                        with open(data["list"], "rb") as fr:
-                            the_list = pickle.load(fr)
-                        os.remove(data["list"])
+                        # TODO: convince mypy this is a filename
+                        filename_2: str = data["list"]
+                        with open(filename_2, "rb") as fr:
+                            the_list_2 = pickle.load(fr)
+                        os.remove(filename_2)
                     else:
-                        the_list = data["list"]
-                    ww.run_class.every_batch(the_list, ww)
-                    the_list = None
+                        the_list_2 = data["list"]
+                    # TODO: resolve circular typing
+                    ww.run_class.every_batch(
+                        the_list_2,
+                        ww
+                    )
+                    # the_list_2 = None
                 with ww.queue_lock:
                     ww.queue_len.value -= 1
             except queue.Empty:
@@ -326,14 +392,14 @@ class QWalkWorker:
                     if len(process_list) > 0:
                         # log_exception("Queue empty, process_list > 0")
                         if USE_PICKLE:
-                            the_list = "%s-%s.pkl" % (time.time(), random.random())
-                            with open(the_list, "wb") as fw:
+                            the_list_3 = "%s-%s.pkl" % (time.time(), random.random())
+                            with open(the_list_3, "wb") as fw:
                                 pickle.dump(process_list, fw)
                         else:
-                            the_list = process_list
-                        ww.add_to_queue({"type": "process_list", "list": the_list})
+                            the_list_3 = process_list
+                        ww.add_to_queue({"type": "process_list", "list": the_list_3})
                         process_list = []
-                        the_list = None
+                        # the_list_3 = None
                     elif ww.queue_len.value > 0:
                         # log_exception("Queue empty exception, but queue length = %s." % (ww.queue_len.value))
                         pass
@@ -350,7 +416,7 @@ class QWalkWorker:
             ww.active_workers.value -= 1
 
     @staticmethod
-    def list_dir(d, ww):
+    def list_dir(d: ListDirArgs, ww: "QWalkWorker") -> Sequence[str]:
         file_count = 0
         next_uri = "first"
         leftovers = []
@@ -411,14 +477,15 @@ class QWalkWorker:
                         process_list.append(file_list.pop())
                         if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
                             if USE_PICKLE:
-                                the_list = "%s-%s.pkl" % (time.time(), random.random())
-                                with open(the_list, "wb") as fw:
+                                filename = "%s-%s.pkl" % (time.time(), random.random())
+                                with open(filename, "wb") as fw:
                                     pickle.dump(process_list, fw)
+                                the_list = filename
                             else:
                                 the_list = process_list
                             ww.add_to_queue({"type": "process_list", "list": the_list})
                             process_list = []
-                            the_list = None
+                            # the_list = None
 
                     with ww.count_lock:
                         ww.file_count.value += file_count
@@ -433,10 +500,10 @@ class QWalkWorker:
                 next_uri = res["paging"]["next"]
                 if len(leftovers) > 0:
                     with ww.write_file_lock:
-                        fw = open("new-queue.txt", "a")
-                        fw.write("\n".join(leftovers))
-                        fw.write("\n")
-                        fw.close()
+                        f = open("new-queue.txt", "a")
+                        f.write("\n".join(leftovers))
+                        f.write("\n")
+                        f.close()
                         leftovers = []
             except:
                 log_exception("UNHANDLED EXCEPTION handling leftover directory entries")

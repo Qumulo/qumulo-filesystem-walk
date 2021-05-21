@@ -7,21 +7,30 @@ import argparse
 import random
 import codecs
 
+from typing import Optional, Sequence, Union
+from typing_extensions import TypedDict
+
+from . import FileInfo, Worker
+
+
+class Result(TypedDict):
+    cf: Union[int, str]
+    md5: str
+
 
 class DataReductionTest:
     FILE_NAME = "data-reduction-test-results.txt"
-    sample_perc = 0.05
 
-    def __init__(self, args=None):
+    def __init__(self, in_args: Optional[Sequence[str]] = None):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--perc", help="", dest="perc")
-        args = parser.parse_args(args)
+        args = parser.parse_args(in_args)
         self.sample_perc = 0.05
         if args.perc:
             self.sample_perc = float(args.perc)
 
     @staticmethod
-    def process_it(work_obj, file_id, offset, md5):
+    def process_it(work_obj: Worker["DataReductionTest"], file_id: str, offset: int, md5: "hashlib._Hash") -> Result:
         fw = io.BytesIO()
         work_obj.rc.fs.read_file(file_=fw, id_=file_id, offset=offset, length=4096)
         fw.seek(0)
@@ -35,7 +44,7 @@ class DataReductionTest:
         return {"cf": c_level, "md5": b64[0:10]}
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["DataReductionTest"]) -> None:
         res = []
         action_count = 0
         md5 = hashlib.md5()
@@ -53,8 +62,8 @@ class DataReductionTest:
                     )
                 except:
                     continue
-                c_end = {"cf": "X", "md5": "X"}
-                c_middle = {"cf": "X", "md5": "X"}
+                c_end: Result = {"cf": "X", "md5": "X"}
+                c_middle: Result = {"cf": "X", "md5": "X"}
                 if file_size > 4096 * 2:
                     try:
                         c_end = DataReductionTest.process_it(
@@ -73,6 +82,7 @@ class DataReductionTest:
                     except:
                         continue
                 ext = file_obj["name"].rpartition(".")[-1]
+                # TODO: name/ext is not bytes?
                 ext = ext.encode("ascii", "ignore")
                 if len(ext) > 6:
                     ext = ext[0:6]
@@ -102,10 +112,10 @@ class DataReductionTest:
             work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(_work_obj):
+    def work_start(_work_obj: Worker["DataReductionTest"]) -> None:
         if os.path.exists(DataReductionTest.FILE_NAME):
             os.remove(DataReductionTest.FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj):
+    def work_done(_work_obj: Worker["DataReductionTest"]) -> None:
         return

@@ -1,13 +1,26 @@
 import os
 import io
 
+from typing import Dict, Sequence
+from typing_extensions import TypedDict
+
+from . import FileInfo, Worker
+
+
+class OwnerInfo(TypedDict):
+    owner: str
+    id_type: str
+    id_value: str
+    count: int
+    size: int
+
 
 class SummarizeOwners:
     # A temporary file for storing the intermediate walk work
     FILE_NAME = "owners.txt"
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["SummarizeOwners"]) -> None:
         owners = {}
         for file_obj in file_list:
             k = (
@@ -27,14 +40,14 @@ class SummarizeOwners:
             work_obj.action_count.value += 1
 
     @staticmethod
-    def work_done(_work_obj):
+    def work_done(_work_obj: Worker["SummarizeOwners"]) -> None:
         print("-" * 80)
         fr = io.open(SummarizeOwners.FILE_NAME, "r", encoding="utf8")
-        owners = {}
+        owners: Dict[str, OwnerInfo] = {}
         for line in fr:
-            (owner, id_type, id_value, count, size) = line.split("|")
-            count = int(count)
-            size = int(size)
+            (owner, id_type, id_value, count_raw, size_raw) = line.split("|")
+            count = int(count_raw)
+            size = int(size_raw)
             if owner not in owners:
                 owners[owner] = {
                     "owner": owner,
@@ -56,6 +69,6 @@ class SummarizeOwners:
         print("-" * 80)
 
     @staticmethod
-    def work_start(_work_obj):
+    def work_start(_work_obj: Worker["SummarizeOwners"]) -> None:
         if os.path.exists(SummarizeOwners.FILE_NAME):
             os.remove(SummarizeOwners.FILE_NAME)

@@ -2,18 +2,20 @@ import os
 import io
 import argparse
 
+from typing import Optional, Sequence
+
+from . import FileInfo, Worker
+
 
 class ChangeExtension:
-    ARGS = None
-
-    def __init__(self, args):
+    def __init__(self, args: Sequence[str]):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--from", help="", required=True, dest="ext_from")
         parser.add_argument("--to", help="", required=True, dest="ext_to")
         self.ARGS = parser.parse_args(args)
 
     @staticmethod
-    def change_extension(file_obj, work_obj):
+    def change_extension(file_obj: FileInfo, work_obj: Worker["ChangeExtension"]) -> Optional[str]:
         ext_from = work_obj.run_class.ARGS.ext_from
         ext_to = work_obj.run_class.ARGS.ext_to
         if file_obj["path"][-len(ext_from) :] == ext_from:
@@ -29,7 +31,7 @@ class ChangeExtension:
         return None
 
     @staticmethod
-    def every_batch(file_list, work_obj):
+    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["ChangeExtension"]) -> None:
         results = []
         for file_obj in file_list:
             result = ChangeExtension.change_extension(file_obj, work_obj)
@@ -45,10 +47,10 @@ class ChangeExtension:
                 work_obj.action_count.value += len(results)
 
     @staticmethod
-    def work_start(work_obj):
+    def work_start(work_obj: Worker["ChangeExtension"]) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(work_obj):
+    def work_done(_work_obj: Worker["ChangeExtension"]) -> None:
         pass
