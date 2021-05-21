@@ -30,7 +30,12 @@ class DataReductionTest:
             self.sample_perc = float(args.perc)
 
     @staticmethod
-    def process_it(work_obj: Worker["DataReductionTest"], file_id: str, offset: int, md5: "hashlib._Hash") -> Result:
+    def process_it(
+        work_obj: Worker["DataReductionTest"],
+        file_id: str,
+        offset: int,
+        md5: "hashlib._Hash",
+    ) -> Result:
         fw = io.BytesIO()
         work_obj.rc.fs.read_file(file_=fw, id_=file_id, offset=offset, length=4096)
         fw.seek(0)
@@ -44,7 +49,9 @@ class DataReductionTest:
         return {"cf": c_level, "md5": b64[0:10]}
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["DataReductionTest"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["DataReductionTest"]
+    ) -> None:
         res = []
         action_count = 0
         md5 = hashlib.md5()

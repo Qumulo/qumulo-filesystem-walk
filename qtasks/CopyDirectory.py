@@ -83,7 +83,9 @@ class CopyDirectory:
         return self.folders[path]
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["CopyDirectory"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["CopyDirectory"]
+    ) -> None:
         results = []
         for file_obj in file_list:
             try:

@@ -15,7 +15,9 @@ class ChangeExtension:
         self.ARGS = parser.parse_args(args)
 
     @staticmethod
-    def change_extension(file_obj: FileInfo, work_obj: Worker["ChangeExtension"]) -> Optional[str]:
+    def change_extension(
+        file_obj: FileInfo, work_obj: Worker["ChangeExtension"]
+    ) -> Optional[str]:
         ext_from = work_obj.run_class.ARGS.ext_from
         ext_to = work_obj.run_class.ARGS.ext_to
         if file_obj["path"][-len(ext_from) :] == ext_from:
@@ -31,7 +33,9 @@ class ChangeExtension:
         return None
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["ChangeExtension"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["ChangeExtension"]
+    ) -> None:
         results = []
         for file_obj in file_list:
             result = ChangeExtension.change_extension(file_obj, work_obj)

@@ -13,6 +13,7 @@ from typing import Callable, Sequence, Optional, Union, List
 from typing_extensions import Literal, TypedDict
 
 from qtasks import Worker
+
 # Import all defined classes
 from qtasks.ChangeExtension import ChangeExtension
 from qtasks.DataReductionTest import DataReductionTest
@@ -33,7 +34,15 @@ QTASKS = {
 }
 
 
-TaskClass = Union[ChangeExtension, DataReductionTest, ModeBitsChecker, Search, SummarizeOwners, ApplyAcls, CopyDirectory]
+TaskClass = Union[
+    ChangeExtension,
+    DataReductionTest,
+    ModeBitsChecker,
+    Search,
+    SummarizeOwners,
+    ApplyAcls,
+    CopyDirectory,
+]
 
 
 try:
@@ -87,7 +96,6 @@ def log_exception(msg: str) -> None:
             s = traceback.format_exc()
             for line in s.split("\n"):
                 log_it(line)
-
 
 
 class Creds(TypedDict):
@@ -168,7 +176,9 @@ class QWalkWorker(Worker[TaskClass]):
         self.MAKE_CHANGES = make_changes
         self.LOG_FILE_NAME = log_file
         self.start_path = "/" if start_path == "/" else re.sub("/$", "", start_path)
-        self.queue: multiprocessing.Queue[Union[ProcessListArgs, ListDirArgs]] = multiprocessing.Queue()  # pylint: disable=unsubscriptable-object
+        self.queue: multiprocessing.Queue[  # pylint: disable=unsubscriptable-object
+            Union[ProcessListArgs, ListDirArgs]
+        ] = multiprocessing.Queue()
         self.queue_lock = multiprocessing.Lock()
         self.count_lock = multiprocessing.Lock()
         self.write_file_lock = multiprocessing.Lock()
@@ -337,7 +347,9 @@ class QWalkWorker(Worker[TaskClass]):
         w.run_class.work_done(w)
 
     @staticmethod
-    def worker_main(func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker") -> None:
+    def worker_main(
+        func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker"
+    ) -> None:
         p_name = multiprocessing.current_process().name
         ww.worker_id = int(re.match(r".*?-([0-9])+", p_name).groups(1)[0]) - 1
         rc = RestClient(random.choice(ww.ips), 8000)
@@ -361,13 +373,18 @@ class QWalkWorker(Worker[TaskClass]):
                         process_list.append(file_list.pop())
                         if len(process_list) >= BATCH_SIZE:
                             if USE_PICKLE:
-                                filename_1 = "%s-%s.pkl" % (time.time(), random.random())
+                                filename_1 = "%s-%s.pkl" % (
+                                    time.time(),
+                                    random.random(),
+                                )
                                 with open(filename_1, "wb") as fw:
                                     pickle.dump(process_list, fw)
                                 the_list_1 = filename_1
                             else:
                                 the_list_1 = process_list
-                            ww.add_to_queue({"type": "process_list", "list": the_list_1})
+                            ww.add_to_queue(
+                                {"type": "process_list", "list": the_list_1}
+                            )
                             process_list = []
                             # the_list_1 = None
                 elif data["type"] == "process_list":
@@ -380,10 +397,7 @@ class QWalkWorker(Worker[TaskClass]):
                     else:
                         the_list_2 = data["list"]
                     # TODO: resolve circular typing
-                    ww.run_class.every_batch(
-                        the_list_2,
-                        ww
-                    )
+                    ww.run_class.every_batch(the_list_2, ww)
                     # the_list_2 = None
                 with ww.queue_lock:
                     ww.queue_len.value -= 1

@@ -10,7 +10,9 @@ class ModeBitsChecker:
     FILE_NAME = "mode-bits-log.txt"
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["ModeBitsChecker"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["ModeBitsChecker"]
+    ) -> None:
         action_count = 0
         mb_res = []
         for file_obj in file_list:

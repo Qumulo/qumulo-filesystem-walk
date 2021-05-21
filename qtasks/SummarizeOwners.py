@@ -20,7 +20,9 @@ class SummarizeOwners:
     FILE_NAME = "owners.txt"
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["SummarizeOwners"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["SummarizeOwners"]
+    ) -> None:
         owners = {}
         for file_obj in file_list:
             k = (

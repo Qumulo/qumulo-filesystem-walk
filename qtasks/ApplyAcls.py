@@ -39,7 +39,9 @@ class ApplyAcls:
             )
 
     @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["ApplyAcls"]) -> None:
+    def every_batch(
+        file_list: Sequence[FileInfo], work_obj: Worker["ApplyAcls"]
+    ) -> None:
         results = []
         action_count = 0
         for file_obj in file_list:

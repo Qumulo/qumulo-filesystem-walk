@@ -32,9 +32,13 @@ def read_full_tree_flat(rc: RestClient, path: str) -> Sequence[str]:
     return sorted(items)
 
 
-def test_search(creds: Creds, start_path: str, search: Sequence[str], snapshot: Optional[str] = None) -> None:
+def test_search(
+    creds: Creds, start_path: str, search: Sequence[str], snapshot: Optional[str] = None
+) -> None:
     log_it("Search: %s" % search)
-    w = QWalkWorker(creds, Search(search), start_path, snapshot, None, LOG_FILE_NAME, None)
+    w = QWalkWorker(
+        creds, Search(search), start_path, snapshot, None, LOG_FILE_NAME, None
+    )
     w.run()
     if os.path.exists(LOG_FILE_NAME):
         content = re.sub(r"[\r\n]+", " ", open(LOG_FILE_NAME).read())
