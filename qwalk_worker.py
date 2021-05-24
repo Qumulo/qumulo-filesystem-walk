@@ -190,7 +190,7 @@ class QWalkWorker(Worker[TaskClass]):
         else:
             self.ips = re.split(r"[ ,]+", OVERRIDE_IPS)
         log_it("Using the following Qumulo IPS: %s" % ",".join(self.ips))
-        self.pool = multiprocessing.Pool(
+        self.pool = multiprocessing.Pool(  # pylint: disable=consider-using-with
             MAX_WORKER_COUNT, QWalkWorker.worker_main, (QWalkWorker.list_dir, self)
         )
 
@@ -514,10 +514,9 @@ class QWalkWorker(Worker[TaskClass]):
                 next_uri = res["paging"]["next"]
                 if len(leftovers) > 0:
                     with ww.write_file_lock:
-                        f = open("new-queue.txt", "a")
-                        f.write("\n".join(leftovers))
-                        f.write("\n")
-                        f.close()
+                        with open("new-queue.txt", "a") as f:
+                            f.write("\n".join(leftovers))
+                            f.write("\n")
                         leftovers = []
             except:
                 log_exception("UNHANDLED EXCEPTION handling leftover directory entries")

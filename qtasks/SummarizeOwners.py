@@ -34,34 +34,34 @@ class SummarizeOwners:
             else:
                 owners[k]["count"] += 1
                 owners[k]["size"] += int(file_obj["size"])
+
         with work_obj.result_file_lock:
-            fw = io.open(SummarizeOwners.FILE_NAME, "a", encoding="utf8")
-            for k, v in owners.items():
-                fw.write("%s|%s|%s\n" % (k, v["count"], v["size"]))
-            fw.close()
+            with io.open(SummarizeOwners.FILE_NAME, "a", encoding="utf8") as f:
+                for k, v in owners.items():
+                    f.write("%s|%s|%s\n" % (k, v["count"], v["size"]))
             work_obj.action_count.value += 1
 
     @staticmethod
     def work_done(_work_obj: Worker["SummarizeOwners"]) -> None:
         print("-" * 80)
-        fr = io.open(SummarizeOwners.FILE_NAME, "r", encoding="utf8")
         owners: Dict[str, OwnerInfo] = {}
-        for line in fr:
-            (owner, id_type, id_value, count_raw, size_raw) = line.split("|")
-            count = int(count_raw)
-            size = int(size_raw)
-            if owner not in owners:
-                owners[owner] = {
-                    "owner": owner,
-                    "id_type": id_type,
-                    "id_value": id_value,
-                    "count": count,
-                    "size": size,
-                }
-            else:
-                owners[owner]["count"] += count
-                owners[owner]["size"] += size
-        fr.close()
+        with io.open(SummarizeOwners.FILE_NAME, "r", encoding="utf8") as f:
+            for line in f:
+                (owner, id_type, id_value, count_raw, size_raw) = line.split("|")
+                count = int(count_raw)
+                size = int(size_raw)
+                if owner not in owners:
+                    owners[owner] = {
+                        "owner": owner,
+                        "id_type": id_type,
+                        "id_value": id_value,
+                        "count": count,
+                        "size": size,
+                    }
+                else:
+                    owners[owner]["count"] += count
+                    owners[owner]["size"] += size
+
         for _k, v in owners.items():
             print(
                 "%(owner)12s (%(id_type)10s/%(id_value)48s): %(count)9s / %(size)15s"

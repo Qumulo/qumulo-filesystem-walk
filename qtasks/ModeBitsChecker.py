@@ -20,10 +20,9 @@ class ModeBitsChecker:
                 mb_res.append("%(mode)s - %(path)s" % file_obj)
 
         with work_obj.result_file_lock:
-            fw = io.open(ModeBitsChecker.FILE_NAME, "a", encoding="utf8")
-            for line in mb_res:
-                fw.write(line + "\n")
-            fw.close()
+            with io.open(ModeBitsChecker.FILE_NAME, "a", encoding="utf8") as f:
+                for line in mb_res:
+                    f.write(line + "\n")
             work_obj.action_count.value += action_count
 
     @staticmethod

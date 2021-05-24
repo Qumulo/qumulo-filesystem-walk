@@ -112,10 +112,9 @@ class DataReductionTest:
                     action_count = 0
 
         with work_obj.result_file_lock:
-            fw = io.open(DataReductionTest.FILE_NAME, "a+", encoding="utf8")
-            for line in res:
-                fw.write(line + "\n")
-            fw.close()
+            with io.open(DataReductionTest.FILE_NAME, "a+", encoding="utf8") as f:
+                for line in res:
+                    f.write(line + "\n")
             work_obj.action_count.value += action_count
 
     @staticmethod

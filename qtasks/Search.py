@@ -53,12 +53,13 @@ class Search:
                     "link_target" in work_obj.run_class.cols
                     and "link" in file_obj["type"].lower()
                 ):
-                    fw = io.BytesIO()
                     try:
-                        work_obj.rc.fs.read_file(id_=file_obj["id"], file_=fw)
-                        fw.seek(0)
+                        with io.BytesIO() as f_bin:
+                            work_obj.rc.fs.read_file(id_=file_obj["id"], file_=f_bin)
+                            f_bin.seek(0)
+                            target = f_bin.read().decode("utf8").strip().strip("\x00")
+
                         parent_path = os.path.dirname(file_obj["path"])
-                        target = fw.read().decode("utf8").strip().strip("\x00")
                         file_obj["link_target"] = re.sub(
                             r"[|\r\n\\]+",
                             "",
@@ -81,10 +82,9 @@ class Search:
 
         if len(results) > 0:
             with work_obj.result_file_lock:
-                f = io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8")
-                for d in results:
-                    f.write("%s\n" % d)
-                f.close()
+                with io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8") as f_txt:
+                    for d in results:
+                        f_txt.write("%s\n" % d)
                 work_obj.action_count.value += len(results)
 
     @staticmethod

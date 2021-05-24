@@ -152,14 +152,14 @@ class CopyDirectory:
                         if not file_exists:
                             if file_obj["type"] == "FS_FILE_TYPE_SYMLINK":
                                 log_it("Creating symlink: %s" % to_path)
-                                link_f = io.BytesIO()
-                                work_obj.rc.fs.read_file(
-                                    snapshot=work_obj.snap,
-                                    id_=file_obj["id"],
-                                    file_=link_f,
-                                )
-                                link_f.seek(0)
-                                target = bytes.decode(link_f.read()).replace("\x00", "")
+                                with io.BytesIO() as link_f:
+                                    work_obj.rc.fs.read_file(
+                                        snapshot=work_obj.snap,
+                                        id_=file_obj["id"],
+                                        file_=link_f,
+                                    )
+                                    link_f.seek(0)
+                                    target = bytes.decode(link_f.read()).replace("\x00", "")
                                 new_f = work_obj.rc.fs.create_symlink(
                                     target=target, dir_path=parent_path, name=file_name
                                 )
@@ -257,10 +257,9 @@ class CopyDirectory:
         try:
             if len(results) > 0:
                 with work_obj.result_file_lock:
-                    fw = io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8")
-                    for d in results:
-                        fw.write("%s\n" % d)
-                    fw.close()
+                    with io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8") as f:
+                        for d in results:
+                            f.write("%s\n" % d)
                     work_obj.action_count.value += len(results)
         except:
             log_it("Unable to save results exception: %s" % str(sys.exc_info()))

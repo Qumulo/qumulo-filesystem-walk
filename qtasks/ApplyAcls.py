@@ -78,10 +78,9 @@ class ApplyAcls:
 
         if len(results) > 0:
             with work_obj.result_file_lock:
-                fw = io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8")
-                for d in results:
-                    fw.write("%s\n" % d)
-                fw.close()
+                with io.open(work_obj.LOG_FILE_NAME, "a", encoding="utf8") as f:
+                    for d in results:
+                        f.write("%s\n" % d)
                 work_obj.action_count.value += action_count
 
     @staticmethod
