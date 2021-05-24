@@ -6,6 +6,7 @@ import random
 import traceback
 import multiprocessing
 import pickle
+import queue
 from qumulo.rest_client import RestClient
 from qumulo.lib.request import RequestError
 
@@ -43,12 +44,6 @@ TaskClass = Union[
     ApplyAcls,
     CopyDirectory,
 ]
-
-
-try:
-    import queue  # python2/3
-except:
-    pass
 
 USE_PICKLE = False
 MAX_QUEUE_LENGTH = 100000
