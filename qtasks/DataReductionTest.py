@@ -31,7 +31,7 @@ class DataReductionTest:
 
     @staticmethod
     def process_it(
-        work_obj: Worker["DataReductionTest"],
+        work_obj: Worker,
         file_id: str,
         offset: int,
         md5: "hashlib._Hash",
@@ -48,39 +48,34 @@ class DataReductionTest:
             c_level = 9
         return {"cf": c_level, "md5": b64[0:10]}
 
-    @staticmethod
-    def every_batch(
-        file_list: Sequence[FileInfo], work_obj: Worker["DataReductionTest"]
-    ) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         res = []
         action_count = 0
         md5 = hashlib.md5()
         for file_obj in file_list:
             if file_obj["type"] == "FS_FILE_TYPE_FILE":
                 # sample 5% of files
-                if random.random() < (1 - work_obj.run_class.sample_perc):
+                if random.random() < (1 - self.sample_perc):
                     continue
                 action_count += 1
                 file_size = int(file_obj["size"])
                 md5 = hashlib.md5()
                 try:
-                    c_start = DataReductionTest.process_it(
-                        work_obj, file_obj["id"], 0, md5
-                    )
+                    c_start = self.process_it(work_obj, file_obj["id"], 0, md5)
                 except:
                     continue
                 c_end: Result = {"cf": "X", "md5": "X"}
                 c_middle: Result = {"cf": "X", "md5": "X"}
                 if file_size > 4096 * 2:
                     try:
-                        c_end = DataReductionTest.process_it(
+                        c_end = self.process_it(
                             work_obj, file_obj["id"], file_size - 4096, md5
                         )
                     except:
                         continue
                 if file_size > 4096 * 3:
                     try:
-                        c_middle = DataReductionTest.process_it(
+                        c_middle = self.process_it(
                             work_obj,
                             file_obj["id"],
                             int(math.floor((file_size / 2.0) / 4096) * 4096),
@@ -118,10 +113,10 @@ class DataReductionTest:
             work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(_work_obj: Worker["DataReductionTest"]) -> None:
+    def work_start(_work_obj: Worker) -> None:
         if os.path.exists(DataReductionTest.FILE_NAME):
             os.remove(DataReductionTest.FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj: Worker["DataReductionTest"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         return

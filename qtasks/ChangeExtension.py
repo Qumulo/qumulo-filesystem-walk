@@ -14,12 +14,9 @@ class ChangeExtension:
         parser.add_argument("--to", help="", required=True, dest="ext_to")
         self.ARGS = parser.parse_args(args)
 
-    @staticmethod
-    def change_extension(
-        file_obj: FileInfo, work_obj: Worker["ChangeExtension"]
-    ) -> Optional[str]:
-        ext_from = work_obj.run_class.ARGS.ext_from
-        ext_to = work_obj.run_class.ARGS.ext_to
+    def change_extension(self, file_obj: FileInfo, work_obj: Worker) -> Optional[str]:
+        ext_from = self.ARGS.ext_from
+        ext_to = self.ARGS.ext_to
         if file_obj["path"][-len(ext_from) :] == ext_from:
             (dir_name, from_file_name) = os.path.split(file_obj["path"])
             to_file_name = from_file_name.replace(ext_from, ext_to)
@@ -32,13 +29,10 @@ class ChangeExtension:
             return "%s: %s -> %s" % (dir_name, from_file_name, to_file_name)
         return None
 
-    @staticmethod
-    def every_batch(
-        file_list: Sequence[FileInfo], work_obj: Worker["ChangeExtension"]
-    ) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         results = []
         for file_obj in file_list:
-            result = ChangeExtension.change_extension(file_obj, work_obj)
+            result = self.change_extension(file_obj, work_obj)
             if result:
                 results.append(result)
 
@@ -50,10 +44,10 @@ class ChangeExtension:
                 work_obj.action_count.value += len(results)
 
     @staticmethod
-    def work_start(work_obj: Worker["ChangeExtension"]) -> None:
+    def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj: Worker["ChangeExtension"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         pass

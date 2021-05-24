@@ -38,34 +38,28 @@ class ApplyAcls:
                 json=True,
             )
 
-    @staticmethod
-    def every_batch(
-        file_list: Sequence[FileInfo], work_obj: Worker["ApplyAcls"]
-    ) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         results = []
         action_count = 0
         for file_obj in file_list:
-            if (
-                work_obj.run_class.dirs_only
-                and file_obj["type"] != "FS_FILE_TYPE_DIRECTORY"
-            ):
+            if self.dirs_only and file_obj["type"] != "FS_FILE_TYPE_DIRECTORY":
                 continue
             action_count += 1
             try:
                 status = "nochange"
                 if work_obj.MAKE_CHANGES:
-                    if work_obj.run_class.add_entry:
-                        work_obj.run_class.add_entry.id = file_obj["id"]
+                    if self.add_entry:
+                        self.add_entry.id = file_obj["id"]
                         fs.do_add_entry(
                             rest_fs,
                             work_obj.rc.conninfo,
                             work_obj.rc.credentials,
-                            work_obj.run_class.add_entry,
+                            self.add_entry,
                         )
                         status = "*changed*"
-                    elif work_obj.run_class.replace_acls:
+                    elif self.replace_acls:
                         work_obj.rc.fs.set_acl_v2(
-                            id_=file_obj["id"], acl=work_obj.run_class.replace_acls
+                            id_=file_obj["id"], acl=self.replace_acls
                         )
             except Exception as e:
                 status = "**failed**"
@@ -84,10 +78,10 @@ class ApplyAcls:
                 work_obj.action_count.value += action_count
 
     @staticmethod
-    def work_start(work_obj: Worker["ApplyAcls"]) -> None:
+    def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj: Worker["ApplyAcls"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         pass

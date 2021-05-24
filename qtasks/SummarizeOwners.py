@@ -19,10 +19,7 @@ class SummarizeOwners:
     # A temporary file for storing the intermediate walk work
     FILE_NAME = "owners.txt"
 
-    @staticmethod
-    def every_batch(
-        file_list: Sequence[FileInfo], work_obj: Worker["SummarizeOwners"]
-    ) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         owners = {}
         for file_obj in file_list:
             k = (
@@ -42,7 +39,7 @@ class SummarizeOwners:
             work_obj.action_count.value += 1
 
     @staticmethod
-    def work_done(_work_obj: Worker["SummarizeOwners"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         print("-" * 80)
         owners: Dict[str, OwnerInfo] = {}
         with io.open(SummarizeOwners.FILE_NAME, "r", encoding="utf8") as f:
@@ -71,6 +68,6 @@ class SummarizeOwners:
         print("-" * 80)
 
     @staticmethod
-    def work_start(_work_obj: Worker["SummarizeOwners"]) -> None:
+    def work_start(_work_obj: Worker) -> None:
         if os.path.exists(SummarizeOwners.FILE_NAME):
             os.remove(SummarizeOwners.FILE_NAME)

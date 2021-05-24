@@ -37,7 +37,7 @@ def test_search(
 ) -> None:
     log_it("Search: %s" % search)
     w = QWalkWorker(
-        creds, Search(search), start_path, snapshot, None, LOG_FILE_NAME, None
+        creds, Search(search), start_path, snapshot, False, LOG_FILE_NAME, None
     )
     w.run()
     if os.path.exists(LOG_FILE_NAME):
@@ -213,7 +213,7 @@ def main() -> None:
 
     log_it("Start: ModeBitsChecker")
     rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode="0000")
-    w = QWalkWorker(creds, ModeBitsChecker, args.d, None, True, LOG_FILE_NAME, None)
+    w = QWalkWorker(creds, ModeBitsChecker(), args.d, None, True, LOG_FILE_NAME, None)
     w.run()
     print("." * 80)
     print(open(ModeBitsChecker.FILE_NAME).read().strip())
@@ -224,7 +224,7 @@ def main() -> None:
     print("-" * 80)
 
     log_it("Start: SummarizeOwners")
-    w = QWalkWorker(creds, SummarizeOwners, args.d, None, True, LOG_FILE_NAME, None)
+    w = QWalkWorker(creds, SummarizeOwners(), args.d, None, True, LOG_FILE_NAME, None)
     w.run()
     w.run_class.work_done(w)
 

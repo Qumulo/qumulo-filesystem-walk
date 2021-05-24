@@ -29,30 +29,26 @@ class Search:
         if args.itemtype:
             self.itemtype = args.itemtype
 
-    @staticmethod
-    def every_batch(file_list: Sequence[FileInfo], work_obj: Worker["Search"]) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         results = []
         for file_obj in file_list:
             found = False
-            if work_obj.run_class.search_str:
-                if work_obj.run_class.search_str in file_obj["path"]:
+            if self.search_str:
+                if self.search_str in file_obj["path"]:
                     found = True
-            elif work_obj.run_class.search_re:
-                if work_obj.run_class.search_re.match(file_obj["path"]):
+            elif self.search_re:
+                if self.search_re.match(file_obj["path"]):
                     found = True
             else:
                 found = True
 
             if found:
-                if "name" in work_obj.run_class.cols:
+                if "name" in self.cols:
                     file_obj["name"] = re.sub(r"[|\r\n\\]+", "", file_obj["name"])
-                if "path" in work_obj.run_class.cols:
+                if "path" in self.cols:
                     file_obj["path"] = re.sub(r"[|\r\n\\]+", "", file_obj["path"])
                 file_obj["link_target"] = ""
-                if (
-                    "link_target" in work_obj.run_class.cols
-                    and "link" in file_obj["type"].lower()
-                ):
+                if "link_target" in self.cols and "link" in file_obj["type"].lower():
                     try:
                         with io.BytesIO() as f_bin:
                             work_obj.rc.fs.read_file(id_=file_obj["id"], file_=f_bin)
@@ -67,15 +63,12 @@ class Search:
                         )
                     except:
                         pass
-                if (
-                    work_obj.run_class.itemtype is None
-                    or work_obj.run_class.itemtype in file_obj["type"].lower()
-                ):
+                if self.itemtype is None or self.itemtype in file_obj["type"].lower():
                     line = "|".join(
                         [
                             # TODO: suppress mypy here or make this a choice option
                             file_obj[col] if col in file_obj else col
-                            for col in work_obj.run_class.cols
+                            for col in self.cols
                         ]
                     )
                     results.append(line)
@@ -88,10 +81,10 @@ class Search:
                 work_obj.action_count.value += len(results)
 
     @staticmethod
-    def work_start(work_obj: Worker["Search"]) -> None:
+    def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj: Worker["Search"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         pass

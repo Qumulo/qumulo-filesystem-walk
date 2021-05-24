@@ -1,5 +1,5 @@
 from multiprocessing.synchronize import Lock
-from typing import Generic, Optional, Sequence, Mapping, TypeVar, TYPE_CHECKING
+from typing import Generic, Optional, Sequence, Mapping, TYPE_CHECKING
 from typing_extensions import Protocol, TypedDict
 from qumulo.rest_client import RestClient
 
@@ -30,15 +30,11 @@ class FileInfo(TypedDict):
     link_target: str
 
 
-U = TypeVar("U")
-
-
-class Worker(Protocol[U]):  # pylint: disable=too-few-public-methods
+class Worker(Protocol):  # pylint: disable=too-few-public-methods
     LOG_FILE_NAME: str
     MAKE_CHANGES: bool
 
     rc: RestClient
-    run_class: U
     result_file_lock: Lock
     # https://github.com/python/typeshed/issues/4266
     action_count: "_Value"
@@ -46,18 +42,14 @@ class Worker(Protocol[U]):  # pylint: disable=too-few-public-methods
     snap: Optional[str]
 
 
-T = TypeVar("T")
-
-
-class Task(Protocol[T]):
-    @staticmethod
-    def every_batch(_file_list: Sequence[FileInfo], _work_obj: Worker[T]) -> None:
+class Task(Protocol):
+    def every_batch(self, _file_list: Sequence[FileInfo], _work_obj: Worker) -> None:
         ...
 
     @staticmethod
-    def work_start(_work_obj: Worker[T]) -> None:
+    def work_start(_work_obj: Worker) -> None:
         ...
 
     @staticmethod
-    def work_done(_work_obj: Worker[T]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         ...

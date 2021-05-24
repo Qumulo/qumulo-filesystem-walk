@@ -82,25 +82,20 @@ class CopyDirectory:
                 self.folders[new_dir] = new_f["id"]
         return self.folders[path]
 
-    @staticmethod
-    def every_batch(
-        file_list: Sequence[FileInfo], work_obj: Worker["CopyDirectory"]
-    ) -> None:
+    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         results = []
         for file_obj in file_list:
             try:
                 # TODO: to_dir could be None
-                to_path = file_obj["path"].replace(
-                    work_obj.start_path, work_obj.run_class.to_dir
-                )
+                to_path = file_obj["path"].replace(work_obj.start_path, self.to_dir)
                 parent_path = os.path.dirname(to_path)
                 file_name = os.path.basename(to_path)
-                work_obj.run_class.create_folder(work_obj.rc, parent_path)
+                self.create_folder(work_obj.rc, parent_path)
                 if file_obj["type"] == "FS_FILE_TYPE_DIRECTORY":
-                    work_obj.run_class.create_folder(work_obj.rc, to_path)
+                    self.create_folder(work_obj.rc, to_path)
                     results.append("DIRECTORY : %s -> %s" % (file_obj["path"], to_path))
                 else:
-                    if file_obj["num_links"] > 1 and work_obj.run_class.skip_hardlinks:
+                    if file_obj["num_links"] > 1 and self.skip_hardlinks:
                         # skip any hard links
                         log_it("Skip hard link: %s" % file_obj["name"])
                         results.append("HARD LINK SKIPPED: %s" % file_obj["path"])
@@ -159,7 +154,9 @@ class CopyDirectory:
                                         file_=link_f,
                                     )
                                     link_f.seek(0)
-                                    target = bytes.decode(link_f.read()).replace("\x00", "")
+                                    target = bytes.decode(link_f.read()).replace(
+                                        "\x00", ""
+                                    )
                                 new_f = work_obj.rc.fs.create_symlink(
                                     target=target, dir_path=parent_path, name=file_name
                                 )
@@ -225,7 +222,7 @@ class CopyDirectory:
                                 and "fs_entry_exists_error" not in e_str
                             ):
                                 log_it(e_str)
-                        if not work_obj.run_class.no_preserve:
+                        if not self.no_preserve:
                             work_obj.rc.fs.set_file_attr(
                                 id_=file_exists,
                                 owner=o_attr["owner"],
@@ -265,10 +262,10 @@ class CopyDirectory:
             log_it("Unable to save results exception: %s" % str(sys.exc_info()))
 
     @staticmethod
-    def work_start(work_obj: Worker["CopyDirectory"]) -> None:
+    def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)
 
     @staticmethod
-    def work_done(_work_obj: Worker["CopyDirectory"]) -> None:
+    def work_done(_work_obj: Worker) -> None:
         pass

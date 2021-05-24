@@ -121,7 +121,7 @@ class ListDirArgs(TypedDict):
     snapshot: Optional[str]
 
 
-class QWalkWorker(Worker[TaskClass]):
+class QWalkWorker(Worker):
     # The class has gotten a bit too circular/interdependant with qtasks.py
     def get_counters(self) -> Counters:
         return {
@@ -199,7 +199,6 @@ class QWalkWorker(Worker[TaskClass]):
 
     def run(self) -> None:
         if not os.path.exists("old-queue.txt"):
-            # TODO: resolve circular typing
             self.run_class.work_start(self)
             rc = RestClient(self.creds["QHOST"], 8000)
             rc.login(self.creds["QUSER"], self.creds["QPASS"])
@@ -313,7 +312,7 @@ class QWalkWorker(Worker[TaskClass]):
         if other_args:
             run_class = eval(run_class_name)(other_args)
         else:
-            run_class = eval(run_class_name)
+            run_class = eval(run_class_name)()
         w = QWalkWorker(
             {"QHOST": hostname, "QUSER": username, "QPASS": password},
             run_class,
@@ -338,7 +337,6 @@ class QWalkWorker(Worker[TaskClass]):
                 counters,
             )
             w.run()
-        # TODO: resolve circular typing
         w.run_class.work_done(w)
 
     @staticmethod
@@ -391,7 +389,6 @@ class QWalkWorker(Worker[TaskClass]):
                         os.remove(filename_2)
                     else:
                         the_list_2 = data["list"]
-                    # TODO: resolve circular typing
                     ww.run_class.every_batch(the_list_2, ww)
                     # the_list_2 = None
                 with ww.queue_lock:
