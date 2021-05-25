@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
-import os
-import io
-import sys
 import argparse
+import io
+import os
+import re
+import sys
 
 os.environ["QWORKERS"] = "2"
 os.environ["QWAITSECONDS"] = "5"
 
-from typing import Sequence, Optional
+from typing import Optional, Sequence
 
-from qwalk_worker import Creds, QWalkWorker, log_it
-from qumulo.rest_client import RestClient
+from qtasks.ApplyAcls import ApplyAcls
 from qtasks.ChangeExtension import ChangeExtension
+from qtasks.CopyDirectory import CopyDirectory
 from qtasks.DataReductionTest import DataReductionTest
 from qtasks.ModeBitsChecker import ModeBitsChecker
 from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
-from qtasks.ApplyAcls import ApplyAcls
-from qtasks.CopyDirectory import CopyDirectory
-
+from qumulo.rest_client import RestClient
+from qwalk_worker import Creds, log_it, QWalkWorker
 
 LOG_FILE_NAME = "test-qwalk-log-file.txt"
 

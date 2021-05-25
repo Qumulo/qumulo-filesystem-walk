@@ -1,6 +1,6 @@
-import os
-import io
 import argparse
+import io
+import os
 
 from typing import Optional, Sequence
 

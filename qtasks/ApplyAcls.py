@@ -1,12 +1,13 @@
-import os
-import io
 import argparse
+import io
 import json
-import qumulo.commands.fs as fs
-import qumulo.rest.fs as rest_fs
+import os
 
 from argparse import Namespace
 from typing import Optional, Sequence
+
+import qumulo.commands.fs as fs
+import qumulo.rest.fs as rest_fs
 
 from . import FileInfo, Worker
 

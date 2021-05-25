@@ -1,15 +1,15 @@
-import os
+import argparse
 import io
+import os
 import sys
 import time
-import argparse
 import traceback
 
 from typing import Dict, Optional, Sequence
 
-from . import FileInfo, Worker
 from qumulo.rest_client import RestClient
 
+from . import FileInfo, Worker
 
 DEBUG = False
 if os.getenv("QDEBUG"):

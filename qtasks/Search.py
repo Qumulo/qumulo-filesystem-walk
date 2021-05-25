@@ -1,7 +1,7 @@
-import re
-import os
-import io
 import argparse
+import io
+import os
+import re
 
 from typing import Sequence
 

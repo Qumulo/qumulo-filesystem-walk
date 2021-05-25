@@ -1,28 +1,29 @@
+import multiprocessing
 import os
+import pickle
+import queue
+import random
 import re
 import sys
 import time
-import random
 import traceback
-import multiprocessing
-import pickle
-import queue
-from qumulo.rest_client import RestClient
-from qumulo.lib.request import RequestError
 
-from typing import Callable, Sequence, Optional, Union, List
+from typing import Callable, List, Optional, Sequence, Union
+
 from typing_extensions import Literal, TypedDict
 
 from qtasks import Task
+from qtasks.ApplyAcls import ApplyAcls
 
 # Import all defined classes
 from qtasks.ChangeExtension import ChangeExtension
+from qtasks.CopyDirectory import CopyDirectory
 from qtasks.DataReductionTest import DataReductionTest
 from qtasks.ModeBitsChecker import ModeBitsChecker
 from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
-from qtasks.ApplyAcls import ApplyAcls
-from qtasks.CopyDirectory import CopyDirectory
+from qumulo.lib.request import RequestError
+from qumulo.rest_client import RestClient
 
 QTASKS = {
     "ChangeExtension": ChangeExtension,

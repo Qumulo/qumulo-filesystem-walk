@@ -1,13 +1,14 @@
-import os
-import io
-import zlib
-import math
-import hashlib
 import argparse
-import random
 import codecs
+import hashlib
+import io
+import math
+import os
+import random
+import zlib
 
 from typing import Optional, Sequence, Union
+
 from typing_extensions import TypedDict
 
 from . import FileInfo, Worker

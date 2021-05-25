@@ -1,7 +1,8 @@
-import os
 import io
+import os
 
 from typing import Dict, Sequence
+
 from typing_extensions import TypedDict
 
 from . import FileInfo, Worker

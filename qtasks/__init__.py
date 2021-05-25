@@ -1,6 +1,8 @@
 from multiprocessing.synchronize import Lock
-from typing import Generic, Optional, Sequence, Mapping, TYPE_CHECKING
+from typing import Generic, Mapping, Optional, Sequence, TYPE_CHECKING
+
 from typing_extensions import Protocol, TypedDict
+
 from qumulo.rest_client import RestClient
 
 if TYPE_CHECKING:
