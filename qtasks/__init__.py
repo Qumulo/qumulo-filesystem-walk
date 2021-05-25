@@ -45,6 +45,9 @@ class Worker(Protocol):  # pylint: disable=too-few-public-methods
 
 
 class Task(Protocol):
+    def __init__(self, in_args: Sequence[str]):
+        ...
+
     def every_batch(self, _file_list: Sequence[FileInfo], _work_obj: Worker) -> None:
         ...
 

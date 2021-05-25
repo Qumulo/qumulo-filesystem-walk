@@ -1,3 +1,4 @@
+import argparse
 import io
 import os
 
@@ -8,6 +9,10 @@ from . import FileInfo, Worker
 
 class ModeBitsChecker:
     FILE_NAME = "mode-bits-log.txt"
+
+    def __init__(self, in_args: Sequence[str]):
+        parser = argparse.ArgumentParser(description="")
+        _args = parser.parse_args(in_args)
 
     def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
         action_count = 0

@@ -8,7 +8,7 @@ import sys
 import time
 import traceback
 
-from typing import Callable, List, Optional, Sequence, Union
+from typing import Callable, List, Mapping, Optional, Sequence, Type, Union
 
 from typing_extensions import Literal, TypedDict
 
@@ -25,7 +25,7 @@ from qtasks.SummarizeOwners import SummarizeOwners
 from qumulo.lib.request import RequestError
 from qumulo.rest_client import RestClient
 
-QTASKS = {
+QTASKS: Mapping[str, Type[Task]] = {
     "ChangeExtension": ChangeExtension,
     "DataReductionTest": DataReductionTest,
     "ModeBitsChecker": ModeBitsChecker,
@@ -298,16 +298,13 @@ class QWalkWorker:
         log_file: str,
         run_class_name: str,
         snapshot_id: Optional[str],
-        other_args: Optional[Sequence[str]] = None,
+        other_args: Sequence[str],
     ) -> None:
         run_class = QTASKS[run_class_name]
-        if other_args:
-            run_inst = run_class(other_args)
-        else:
-            run_inst = run_class()
+        run_task = run_class(other_args)
         w = QWalkWorker(
             {"QHOST": hostname, "QUSER": username, "QPASS": password},
-            run_inst,
+            run_task,
             start_dir,  # starting directory
             snapshot_id,
             make_changes,
@@ -321,7 +318,7 @@ class QWalkWorker:
             del w
             w = QWalkWorker(
                 {"QHOST": hostname, "QUSER": username, "QPASS": password},
-                run_inst,
+                run_task,
                 start_dir,  # starting directory
                 snapshot_id,
                 make_changes,

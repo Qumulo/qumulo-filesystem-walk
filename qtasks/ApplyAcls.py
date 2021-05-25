@@ -4,7 +4,7 @@ import json
 import os
 
 from argparse import Namespace
-from typing import Optional, Sequence
+from typing import Sequence
 
 import qumulo.commands.fs as fs
 import qumulo.rest.fs as rest_fs
@@ -13,7 +13,7 @@ from . import FileInfo, Worker
 
 
 class ApplyAcls:
-    def __init__(self, in_args: Optional[Sequence[str]] = None):
+    def __init__(self, in_args: Sequence[str]):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--replace_acls", help="")
         parser.add_argument("--add_entry", help="")

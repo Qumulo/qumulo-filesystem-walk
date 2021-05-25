@@ -7,7 +7,7 @@ import os
 import random
 import zlib
 
-from typing import Optional, Sequence, Union
+from typing import Sequence, Union
 
 from typing_extensions import TypedDict
 
@@ -22,7 +22,7 @@ class Result(TypedDict):
 class DataReductionTest:
     FILE_NAME = "data-reduction-test-results.txt"
 
-    def __init__(self, in_args: Optional[Sequence[str]] = None):
+    def __init__(self, in_args: Sequence[str]):
         parser = argparse.ArgumentParser(description="")
         parser.add_argument("--perc", help="", dest="perc")
         args = parser.parse_args(in_args)
