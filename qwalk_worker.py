@@ -13,7 +13,7 @@ from qumulo.lib.request import RequestError
 from typing import Callable, Sequence, Optional, Union, List
 from typing_extensions import Literal, TypedDict
 
-from qtasks import Worker
+from qtasks import Task
 
 # Import all defined classes
 from qtasks.ChangeExtension import ChangeExtension
@@ -34,16 +34,6 @@ QTASKS = {
     "CopyDirectory": CopyDirectory,
 }
 
-
-TaskClass = Union[
-    ChangeExtension,
-    DataReductionTest,
-    ModeBitsChecker,
-    Search,
-    SummarizeOwners,
-    ApplyAcls,
-    CopyDirectory,
-]
 
 USE_PICKLE = False
 MAX_QUEUE_LENGTH = 100000
@@ -121,7 +111,7 @@ class ListDirArgs(TypedDict):
     snapshot: Optional[str]
 
 
-class QWalkWorker(Worker):
+class QWalkWorker:
     # The class has gotten a bit too circular/interdependant with qtasks.py
     def get_counters(self) -> Counters:
         return {
@@ -138,7 +128,7 @@ class QWalkWorker(Worker):
     def __init__(
         self,
         creds: Creds,
-        run_class: TaskClass,
+        run_task: Task,
         start_path: str,
         snap: Optional[str],
         make_changes: bool,
@@ -166,7 +156,7 @@ class QWalkWorker(Worker):
             self.file_count.value = counters["file_count"]
 
         self.creds = creds
-        self.run_class = run_class
+        self.run_task = run_task
         self.worker_id: Optional[int] = None
         self.MAKE_CHANGES = make_changes
         self.LOG_FILE_NAME = log_file
@@ -199,7 +189,7 @@ class QWalkWorker(Worker):
 
     def run(self) -> None:
         if not os.path.exists("old-queue.txt"):
-            self.run_class.work_start(self)
+            self.run_task.work_start(self)
             rc = RestClient(self.creds["QHOST"], 8000)
             rc.login(self.creds["QUSER"], self.creds["QPASS"])
             if self.snap:
@@ -309,13 +299,14 @@ class QWalkWorker(Worker):
         snapshot_id: Optional[str],
         other_args: Optional[Sequence[str]] = None,
     ) -> None:
+        run_class = QTASKS[run_class_name]
         if other_args:
-            run_class = eval(run_class_name)(other_args)
+            run_inst = run_class(other_args)
         else:
-            run_class = eval(run_class_name)()
+            run_inst = run_class()
         w = QWalkWorker(
             {"QHOST": hostname, "QUSER": username, "QPASS": password},
-            run_class,
+            run_inst,
             start_dir,  # starting directory
             snapshot_id,
             make_changes,
@@ -329,7 +320,7 @@ class QWalkWorker(Worker):
             del w
             w = QWalkWorker(
                 {"QHOST": hostname, "QUSER": username, "QPASS": password},
-                run_class,
+                run_inst,
                 start_dir,  # starting directory
                 snapshot_id,
                 make_changes,
@@ -337,7 +328,7 @@ class QWalkWorker(Worker):
                 counters,
             )
             w.run()
-        w.run_class.work_done(w)
+        w.run_task.work_done(w)
 
     @staticmethod
     def worker_main(
@@ -389,7 +380,7 @@ class QWalkWorker(Worker):
                         os.remove(filename_2)
                     else:
                         the_list_2 = data["list"]
-                    ww.run_class.every_batch(the_list_2, ww)
+                    ww.run_task.every_batch(the_list_2, ww)
                     # the_list_2 = None
                 with ww.queue_lock:
                     ww.queue_len.value -= 1

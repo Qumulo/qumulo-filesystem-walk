@@ -3,7 +3,7 @@
 import os
 import sys
 import argparse
-from qwalk_worker import QWalkWorker
+from qwalk_worker import QTASKS, QWalkWorker
 
 
 def main() -> None:
@@ -22,9 +22,8 @@ def main() -> None:
     parser.add_argument("-l", help="Log file", default="output-walk-log.txt")
     parser.add_argument(
         "-c",
-        help="Class to run. Options include: "
-        + "ChangeExtension, SummarizeOwners, DataReductionTest, "
-        + "ModeBitsChecker, ApplyAcls, Search, CopyDirectory",
+        help="Class to run.",
+        choices=list(QTASKS.keys()),
         required=True,
     )
     parser.add_argument("--snap", help="Snapshot id")
