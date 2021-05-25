@@ -8,7 +8,7 @@ import sys
 import time
 import traceback
 
-from typing import Callable, List, Mapping, Optional, Sequence, Type, Union
+from typing import Callable, cast, List, Mapping, Optional, Sequence, Type, Union
 
 from typing_extensions import Literal, TypedDict
 
@@ -103,7 +103,7 @@ class Counters(TypedDict):
 
 class ProcessListArgs(TypedDict):
     type: Literal["process_list"]
-    list: Union[str, Sequence[str]]
+    list: Union[str, List[str]]
 
 
 class ListDirArgs(TypedDict):
@@ -364,7 +364,7 @@ class QWalkWorker:
                                 )
                                 with open(filename_1, "wb") as fw:
                                     pickle.dump(process_list, fw)
-                                the_list_1 = filename_1
+                                the_list_1: Union[str, List[str]] = filename_1
                             else:
                                 the_list_1 = process_list
                             ww.add_to_queue(
@@ -374,7 +374,8 @@ class QWalkWorker:
                             # the_list_1 = None
                 elif data["type"] == "process_list":
                     if USE_PICKLE:
-                        filename_2: str = data["list"]
+                        # TODO: instead of USE_PICKLE, infer from list type?
+                        filename_2 = cast(str, data["list"])
                         with open(filename_2, "rb") as fr:
                             the_list_2 = pickle.load(fr)
                         os.remove(filename_2)
@@ -389,9 +390,10 @@ class QWalkWorker:
                     if len(process_list) > 0:
                         # log_exception("Queue empty, process_list > 0")
                         if USE_PICKLE:
-                            the_list_3 = "%s-%s.pkl" % (time.time(), random.random())
-                            with open(the_list_3, "wb") as fw:
+                            filename_3 = "%s-%s.pkl" % (time.time(), random.random())
+                            with open(filename_3, "wb") as fw:
                                 pickle.dump(process_list, fw)
+                            the_list_3: Union[str, List[str]] = filename_3
                         else:
                             the_list_3 = process_list
                         ww.add_to_queue({"type": "process_list", "list": the_list_3})
@@ -477,7 +479,7 @@ class QWalkWorker:
                                 filename = "%s-%s.pkl" % (time.time(), random.random())
                                 with open(filename, "wb") as fw:
                                     pickle.dump(process_list, fw)
-                                the_list = filename
+                                the_list: Union[str, List[str]] = filename
                             else:
                                 the_list = process_list
                             ww.add_to_queue({"type": "process_list", "list": the_list})
