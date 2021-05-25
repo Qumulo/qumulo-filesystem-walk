@@ -74,7 +74,7 @@ def log_it(msg: str) -> None:
 
 
 def log_exception(msg: str) -> None:
-    global LOG_LOCK
+    global LOG_LOCK  # pylint: disable=global-statement
     if DEBUG:
         with LOG_LOCK:
             log_it(msg.replace("\n", ""))
@@ -112,7 +112,7 @@ class ListDirArgs(TypedDict):
     snapshot: Optional[str]
 
 
-class QWalkWorker:
+class QWalkWorker:  # pylint: disable=too-many-instance-attributes
     # The class has gotten a bit too circular/interdependant with qtasks.py
     def get_counters(self) -> Counters:
         return {
@@ -126,7 +126,7 @@ class QWalkWorker:
             "file_count": self.file_count.value,
         }
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         creds: Creds,
         run_task: Task,
@@ -290,7 +290,7 @@ class QWalkWorker:
         )
 
     @staticmethod
-    def run_all(
+    def run_all(  # pylint: disable=too-many-arguments
         hostname: str,
         username: str,
         password: str,
@@ -330,7 +330,7 @@ class QWalkWorker:
         w.run_task.work_done(w)
 
     @staticmethod
-    def worker_main(
+    def worker_main(  # pylint: disable=too-many-nested-blocks
         func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker"
     ) -> None:
         p_name = multiprocessing.current_process().name
