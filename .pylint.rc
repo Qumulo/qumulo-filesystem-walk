@@ -1,0 +1,227 @@
+[MASTER]
+
+extension-pkg-allow-list=
+extension-pkg-whitelist=
+fail-under=10.0
+ignore=CVS
+ignore-patterns=
+#init-hook=
+jobs=1
+limit-inference-results=100
+load-plugins=
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+
+[MESSAGES CONTROL]
+
+confidence=
+enable=
+disable=missing-function-docstring,
+        missing-class-docstring,
+        missing-module-docstring,
+        line-too-long,
+        duplicate-code,
+        wrong-import-order,
+        wrong-import-position,
+        invalid-name,
+        too-many-branches,
+        too-many-statements,
+        too-many-locals,
+        bare-except
+
+[REPORTS]
+
+evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
+#msg-template=
+output-format=text
+reports=no
+score=yes
+
+
+[REFACTORING]
+
+max-nested-blocks=5
+never-returning-functions=sys.exit,argparse.parse_error
+
+
+[LOGGING]
+
+logging-format-style=old
+logging-modules=logging
+
+
+[SPELLING]
+
+max-spelling-suggestions=4
+spelling-dict=
+spelling-ignore-comment-directives=fmt: on,fmt: off,noqa:,noqa,nosec,isort:skip,mypy:
+spelling-ignore-words=
+spelling-private-dict-file=
+spelling-store-unknown-words=no
+
+
+[MISCELLANEOUS]
+
+notes=FIXME,XXX,TODO
+#notes-rgx=
+
+
+[TYPECHECK]
+
+contextmanager-decorators=contextlib.contextmanager
+generated-members=
+ignore-mixin-members=yes
+ignore-none=yes
+ignore-on-opaque-inference=yes
+ignored-classes=RestClient
+ignored-modules=
+missing-member-hint=yes
+missing-member-hint-distance=1
+missing-member-max-choices=1
+signature-mutators=
+
+
+[VARIABLES]
+
+additional-builtins=
+
+# Tells whether unused global variables should be treated as a violation.
+allow-global-unused-variables=yes
+
+allowed-redefined-builtins=
+callbacks=cb_,_cb
+dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)
+ignored-argument-names=_.*
+init-import=no
+redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io
+
+
+[FORMAT]
+
+expected-line-ending-format=LF
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+indent-after-paren=4
+indent-string='    '
+max-line-length=100
+max-module-lines=1000
+single-line-class-stmt=no
+single-line-if-stmt=no
+
+
+[SIMILARITIES]
+
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=no
+min-similarity-lines=4
+
+
+[BASIC]
+
+good-names=i,j,k,v,f,fp,e,ex,_
+
+argument-naming-style=snake_case
+#argument-rgx=
+attr-naming-style=snake_case
+#attr-rgx=
+bad-names=
+#bad-names-rgxs=
+class-attribute-naming-style=any
+#class-attribute-rgx=
+class-const-naming-style=UPPER_CASE
+#class-const-rgx=
+class-naming-style=PascalCase
+#class-rgx=
+const-naming-style=UPPER_CASE
+#const-rgx=
+docstring-min-length=-1
+function-naming-style=snake_case
+#function-rgx=
+#good-names-rgxs=
+include-naming-hint=no
+inlinevar-naming-style=any
+#inlinevar-rgx=
+method-naming-style=snake_case
+#method-rgx=
+module-naming-style=snake_case
+#module-rgx=
+name-group=
+no-docstring-rgx=^_
+property-classes=abc.abstractproperty
+variable-naming-style=snake_case
+#variable-rgx=
+
+
+[STRING]
+
+check-quote-consistency=no
+check-str-concat-over-line-jumps=no
+
+
+[IMPORTS]
+
+allow-any-import-level=
+allow-wildcard-with-all=no
+analyse-fallback-blocks=no
+deprecated-modules=optparse,tkinter.tix
+ext-import-graph=
+import-graph=
+int-import-graph=
+known-standard-library=
+known-third-party=enchant
+preferred-modules=
+
+
+[CLASSES]
+
+check-protected-access-in-special-methods=no
+defining-attr-methods=__init__,
+                      __new__,
+                      setUp,
+                      __post_init__
+exclude-protected=_asdict,
+                  _fields,
+                  _replace,
+                  _source,
+                  _make
+valid-classmethod-first-arg=cls
+valid-metaclass-classmethod-first-arg=cls
+
+
+[DESIGN]
+
+# Maximum number of arguments for function / method.
+max-args=5
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=7
+
+# Maximum number of boolean expressions in an if statement (see R0916).
+max-bool-expr=5
+
+# Maximum number of branch for function / method body.
+max-branches=12
+
+# Maximum number of locals for function / method body.
+max-locals=15
+
+# Maximum number of parents for a class (see R0901).
+max-parents=7
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=20
+
+# Maximum number of return / yield for function / method body.
+max-returns=6
+
+# Maximum number of statements in function / method body.
+max-statements=50
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=2
+
+
+[EXCEPTIONS]
+
+overgeneral-exceptions=

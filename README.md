@@ -1,14 +1,14 @@
-# Qumulo filesystem walk with python and the API
+# Qumulo filesystem walk with Python and the Qumulo API
 
-Walk a Qumulo filesystem, perform actions with highly parallelized python
+Walk a Qumulo filesystem, perform actions with highly parallelized Python
 
 
 ## Requirements
 
-* MacOSX - python 2.7, 3.7 (Tested on 2.7.16 and 3.7.7)
-* Linux  - python 2.7, 3.7 (Tested on 2.7.15 and 3.7.6)
-* Windows - python 2.7, 3.7 (Tested on 2.7.15 and 3.7.8)
-* Qumulo API python bindings `pip install -r requirements.txt`
+* MacOSX - Python 3.7 (Tested on 3.7.7)
+* Linux  - Python 3.7 (Tested on 3.7.6)
+* Windows - Python 3.7 (Tested on 3.7.8)
+* Qumulo API Python bindings `pip install -r requirements.txt`
 * Qumulo cluster software version >= 2.13.0 (though some features might work on older versions)
 
 
@@ -25,7 +25,6 @@ This is approach is designed to handle billions of files and directories. Becaus
 * Handle API bearer token timeout after 10 hours
 * Break down large directories into smaller chunks
 * Batch up small sets of files and directories when possible
-* Works both with Python2 and Python3
 
 
 ## How fast it is?
@@ -35,7 +34,7 @@ It can read over 150,000 files per second and up to 6,000 directories per second
 
 ## Output and logging
 
-By default, the walk will output information to the command line every 10 seconds that indicates 
+By default, the walk will output information to the command line every 10 seconds that indicates
 the progress of the walk. The fields are abbreviated and correspond to the following:
 
 * **dir** - directories traversed
@@ -53,25 +52,33 @@ By default, a log file will also be written of everything that you're searching,
 
 ### Summarize owners of filesystem capacity
 
-`python qwalk.py -s the.qumulo -d /start/directory -c SummarizeOwners`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c SummarizeOwners
+```
 
 This example walks the filesystem and summarizes owners and their corresponding file count and capacity utilization.
 
 
 ### Change the file extension names for certain files
 
-`python qwalk.py -s the.qumulo -d /start/directory -c ChangeExtension --from jpeg --to jpg`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c ChangeExtension --from jpeg --to jpg
+```
 
-This example walks the filesystem, searches for files ending with ".jpeg" and then logs what files would be changed. If you want to make the changes, run the script with the added `-g` argument. 
+This example walks the filesystem, searches for files ending with ".jpeg" and then logs what files would be changed. If you want to make the changes, run the script with the added `-g` argument.
 
 
 ### Search filesystem paths and names by regular expression or string
 
-`python qwalk.py -s the.qumulo -d /start/directory -c Search --str password`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c Search --str password
+```
 
 Search for files with the exact string 'password' in the path or name. Look for the output in `output-walk-log.txt` in the same directory.
 
-`python qwalk.py -s the.qumulo -d /start/directory -c Search --re ".*passw[or]*d.*"`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c Search --re ".*passw[or]*d.*"
+```
 
 Case-insensitive search for files with the string 'password' or 'passwd' in the path or name.
 Look for the output in `output-walk-log.txt` in the same directory.
@@ -79,7 +86,9 @@ Look for the output in `output-walk-log.txt` in the same directory.
 
 ### List everything (files, directories, etc) in the filesystem
 
-`python qwalk.py -s the.qumulo -d /start/directory -c Search --re "." --cols path,type,id,size,blocks,owner,change_time`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c Search --re "." --cols path,type,id,size,blocks,owner,change_time
+```
 
 This "search" is basically looking for anything and everything. `--re "."` means look for any charcter in the path. With each results it will then print a single line to the output file that includes the specified `--cols`. If no cols are specified, just the path is saved to the output file. All columns will saved in pipe-delimited format "|".
 
@@ -109,61 +118,78 @@ All potential columns include:
 
 ### Find all symbolic links (symlinks) in a path
 
-`python qwalk.py -s the.qumulo -d /start/directory -c Search --itemtype link --cols path,type,id,size,blocks,owner,change_time`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c Search --itemtype link --cols path,type,id,size,blocks,owner,change_time
+```
 
-This command will walk the filesystem and search for items that are symlinks. It will also list out the corresponding metadata specified by --cols
+This command will walk the filesystem and search for items that are symlinks. It will also list out the corresponding metadata specified by `--cols`
 
 
 ### Examine contents of files to check for data reduction potential
 
-`python qwalk.py -s the.qumulo -d /start/directory -c DataReductionTest --perc 0.01`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c DataReductionTest --perc 0.01
+```
 
-Walk the filesystem and open a random 1% of files (--perc 0.01) and use zlib.compress to verify how compressible the data in the file is. This class will only attempt to compress, at most, 12288 bytes in each file. Because each examined requires multiple operations, this can be slower than the other current walk classes.
+Walk the filesystem and open a random 1% of files (`--perc 0.01`) and use zlib.compress to verify how compressible the data in the file is. This class will only attempt to compress, at most, 12288 bytes in each file. Because each examined requires multiple operations, this can be slower than the other current walk classes.
 
 
 ### POSIX mode bits where the owner has no rights to the file or directory.
 
-`python qwalk.py -s the.qumulo -d /start/directory -c ModeBitsChecker`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c ModeBitsChecker
+```
 
 This will look at the metadata on each file and write any results to a file where the file or directory looks like '0\*\*' on the mode bits.
 
 
 ### Add a new read ACE "access control entry" to all items in a directory
 
-`python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --add_entry examples/ace-everyone-read-only.json`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --add_entry examples/ace-everyone-read-only.json
+```
 
-This will look at all items within the specified start path `-d` and then add a new ACE. Specifically, it will add the ace in the example file examples/ace-everyone-read-only.json. By default, it will only output the list of items that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+This will look at all items within the specified start path `-d` and then add a new ACE. Specifically, it will add the ace in the example file `examples/ace-everyone-read-only.json`. By default, it will only output the list of items that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
 ### Add a new 'traverse/execute' ACE "access control entry" to all (and only) subdirectories in a directory
 
-`python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --add_entry examples/ace-everyone-execute-traverse.json --dirs_only`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --add_entry examples/ace-everyone-execute-traverse.json --dirs_only
+```
 
-This will look at all items within the specified start path `-d` and then add a new execute/traverse ACE for the Authenticated Users SID as specified in examples/ace-everyone-execute-traverse.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+This will look at all items within the specified start path `-d` and then add a new execute/traverse ACE for the Authenticated Users SID as specified in `examples/ace-everyone-execute-traverse.json`. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
 ### Replace *ALL* ACLs on all items in a directory
 
-`python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --replace_acls examples/acls-everyone-all-access.json`
+```
+python qwalk.py -s the.qumulo -d /start/directory -c ApplyAcls --replace_acls examples/acls-everyone-all-access.json
+```
 
-This will look at all items within the specified start path `-d` and then replace the existing ACLs with the new ACls in the example file examples/acls-everyone-all-access.json. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
+This will look at all items within the specified start path `-d` and then replace the existing ACLs with the new ACls in the example file `examples/acls-everyone-all-access.json`. By default, it will only output the list of directories that will be changed to a log file. If you want to apply the changes specified, please add the `-g` argument.
 
 
 ### Copy a full directory tree
 
 Additional arguments:
-* --to_dir /qumulo/path - Required argument for where you want to copy data to. Will get created if it doesn't exist.
-* --skip_hardlinks - Specify this argument if you want to ignore all hard links (source and targets).
-* --no_preserve - Specify this argument if you don't want to copy permissions or other file attributes.
 
-`python qwalk.py -s the.qumulo -d /copy-from -c CopyDirectory --to_dir /test-full-copy`
+* `--to_dir /qumulo/path` - Required argument for where you want to copy data to. Will get created if it doesn't exist.
+* `--skip_hardlinks` - Specify this argument if you want to ignore all hard links (source and targets).
+* `--no_preserve` - Specify this argument if you don't want to copy permissions or other file attributes.
+
+```
+python qwalk.py -s the.qumulo -d /copy-from -c CopyDirectory --to_dir /test-full-copy
+```
 
 This will copy all items within the specified start directory `-d` to the destination directory `--to_dir`.
 
 
 ### Restore all data from a snapshot for the given directory.
 
-`python qwalk.py -s the.qumulo -d /original-snapped-dir --snap 55123 -c CopyDirectory --to_dir /test-full-copy-from-snap`
+```
+python qwalk.py -s the.qumulo -d /original-snapped-dir --snap 55123 -c CopyDirectory --to_dir /test-full-copy-from-snap
+```
 
 This will copy all items within the specified start directory `-d` and within the specified snapshot to the destination directory `--to_dir`.
 
@@ -179,6 +205,7 @@ This will copy all items within the specified start directory `-d` and within th
 * **QUSEPICKLE** - The most expiremental of the knobs. Use pickled _files_ to pass batches around (default: None)
 
 Set any of these variables at the command line:
+
 * Windows: `Set QBATCHSIZE=100`
 * Max/Linux: `export QBATCHSIZE=1000`
 
@@ -187,7 +214,7 @@ Set any of these variables at the command line:
 
 Any walk of the filesystem will involve handling lots of files and directories. It also can involve a lot of different functionality and code. The qtask classes are where this functionality can be built. Above we have a number of classes currently built, but for those that know a bit of code, they can create their own classes or modify existing classes to meet their functional needs.
 
-See the current imlementations in qtasks/ to figure out how to build your own approach.
+See the current implementations in `qtasks/` to figure out how to build your own approach.
 
 For a bit of context that can help, below you will find the metadata that we have with each file inside of the `every_batch` method.
 
