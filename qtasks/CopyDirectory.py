@@ -86,8 +86,10 @@ class CopyDirectory:
         results = []
         for file_obj in file_list:
             try:
-                # TODO: to_dir could be None
-                to_path = file_obj["path"].replace(work_obj.start_path, self.to_dir)
+                to_path = file_obj["path"]
+                if self.to_dir is not None:
+                    to_path = to_path.replace(work_obj.start_path, self.to_dir)
+
                 parent_path = os.path.dirname(to_path)
                 file_name = os.path.basename(to_path)
                 self.create_folder(work_obj.rc, parent_path)
@@ -100,7 +102,8 @@ class CopyDirectory:
                         log_it("Skip hard link: %s" % file_obj["name"])
                         results.append("HARD LINK SKIPPED: %s" % file_obj["path"])
                         continue
-                    elif file_obj["num_links"] > 1:
+
+                    if file_obj["num_links"] > 1:
                         results.append("HARD LINK FOUND: %s" % file_obj["path"])
                     file_exists = None
                     try:
@@ -142,7 +145,6 @@ class CopyDirectory:
                                 "!!FILE COPY FAILED1: %s -> %s"
                                 % (file_obj["path"], to_path)
                             )
-                        pass
                     try:
                         if not file_exists:
                             if file_obj["type"] == "FS_FILE_TYPE_SYMLINK":

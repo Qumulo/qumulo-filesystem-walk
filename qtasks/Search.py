@@ -66,8 +66,8 @@ class Search:
                 if self.itemtype is None or self.itemtype in file_obj["type"].lower():
                     line = "|".join(
                         [
-                            # TODO: suppress mypy here or make this a choice option
-                            file_obj[col] if col in file_obj else col
+                            # mypy insists "TypedDict key must be a string literal"
+                            file_obj[col] if col in file_obj else col  # type: ignore[misc]
                             for col in self.cols
                         ]
                     )

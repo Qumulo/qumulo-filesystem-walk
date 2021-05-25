@@ -6,7 +6,9 @@ from typing_extensions import Protocol, TypedDict
 from qumulo.rest_client import RestClient
 
 if TYPE_CHECKING:
-    from multiprocessing.sharedctypes import _Value
+    from multiprocessing.sharedctypes import (  # pylint: disable=no-name-in-module,ungrouped-imports
+        _Value,
+    )
 
 
 class FileInfo(TypedDict):
@@ -44,8 +46,8 @@ class Worker(Protocol):  # pylint: disable=too-few-public-methods
     snap: Optional[str]
 
 
-class Task(Protocol):
-    def __init__(self, in_args: Sequence[str]):
+class Task(Protocol):  # pylint: disable=super-init-not-called
+    def __init__(self, in_args: Sequence[str]):  # pylint: disable=super-init-not-called
         ...
 
     def every_batch(self, _file_list: Sequence[FileInfo], _work_obj: Worker) -> None:

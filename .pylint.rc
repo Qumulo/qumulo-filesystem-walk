@@ -32,13 +32,7 @@ disable=missing-function-docstring,
         too-many-branches,
         too-many-statements,
         too-many-locals,
-        eval-used,
-        broad-except,
-        no-self-use,
-        bare-except,
-        unnecessary-pass,
-        no-else-continue
-
+        bare-except
 
 [REPORTS]
 

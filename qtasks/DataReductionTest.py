@@ -85,8 +85,7 @@ class DataReductionTest:
                     except:
                         continue
                 ext = file_obj["name"].rpartition(".")[-1]
-                # TODO: name/ext is not bytes?
-                ext = ext.encode("ascii", "ignore")
+                ext = ext.encode("ascii", "ignore").decode("ascii")
                 if len(ext) > 6:
                     ext = ext[0:6]
                 res.append(

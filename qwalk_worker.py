@@ -180,7 +180,8 @@ class QWalkWorker:
             MAX_WORKER_COUNT, QWalkWorker.worker_main, (QWalkWorker.list_dir, self)
         )
 
-    def rc_get_ips(self, creds: Creds) -> Sequence[str]:
+    @staticmethod
+    def rc_get_ips(creds: Creds) -> Sequence[str]:
         rc = RestClient(creds["QHOST"], 8000)
         rc.login(creds["QUSER"], creds["QPASS"])
         ips = []
@@ -305,7 +306,7 @@ class QWalkWorker:
         w = QWalkWorker(
             {"QHOST": hostname, "QUSER": username, "QPASS": password},
             run_task,
-            start_dir,  # starting directory
+            start_dir,
             snapshot_id,
             make_changes,
             log_file,
@@ -319,7 +320,7 @@ class QWalkWorker:
             w = QWalkWorker(
                 {"QHOST": hostname, "QUSER": username, "QPASS": password},
                 run_task,
-                start_dir,  # starting directory
+                start_dir,
                 snapshot_id,
                 make_changes,
                 log_file,
@@ -333,7 +334,9 @@ class QWalkWorker:
         func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker"
     ) -> None:
         p_name = multiprocessing.current_process().name
-        ww.worker_id = int(re.match(r".*?-([0-9])+", p_name).groups(1)[0]) - 1
+        match = re.match(r".*?-([0-9])+", p_name)
+        assert match, p_name
+        ww.worker_id = int(match.group(1)) - 1
         rc = RestClient(random.choice(ww.ips), 8000)
         rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
         client_start = time.time()
@@ -371,7 +374,6 @@ class QWalkWorker:
                             # the_list_1 = None
                 elif data["type"] == "process_list":
                     if USE_PICKLE:
-                        # TODO: convince mypy this is a filename
                         filename_2: str = data["list"]
                         with open(filename_2, "rb") as fr:
                             the_list_2 = pickle.load(fr)

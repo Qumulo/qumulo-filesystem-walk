@@ -25,7 +25,9 @@ class SummarizeOwners:
         parser = argparse.ArgumentParser(description="")
         _args = parser.parse_args(in_args)
 
-    def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
+    def every_batch(  # pylint: disable=no-self-use
+        self, file_list: Sequence[FileInfo], work_obj: Worker
+    ) -> None:
         owners = {}
         for file_obj in file_list:
             k = (
