@@ -95,6 +95,37 @@ class CopyDirectory:
                 self.create_folder(work_obj.rc, parent_path)
                 if file_obj["type"] == "FS_FILE_TYPE_DIRECTORY":
                     self.create_folder(work_obj.rc, to_path)
+
+                    new_f = work_obj.rc.fs.get_file_attr(path=to_path)
+                    file_exists = new_f['id']
+
+                    o_attr = work_obj.rc.fs.get_file_attr(
+                        snapshot = work_obj.snap,
+                        id_ = file_obj["id"]
+                    )
+                    o_acl = work_obj.rc.fs.get_acl_v2(
+                        snapshot = work_obj.snap,
+                        id_ = file_obj["id"]
+                    )
+
+                    if not self.no_preserve:
+                        work_obj.rc.fs.set_file_attr(
+                            id_ = file_exists,
+                            owner=o_attr['owner'],
+                            group=o_attr['group'],
+                            extended_attributes=o_attr['extended_attributes'],
+                        )
+                        work_obj.rc.fs.set_acl_v2(
+                            id_ = file_exists,
+                            acl = o_acl
+                        )
+                        work_obj.rc.fs.set_file_attr(
+                            id_ = file_exists,
+                            creation_time = o_attr['creation_time'],
+                            modification_time = o_attr['modification_time'],
+                            change_time = o_attr['change_time'],
+                        )
+
                     results.append("DIRECTORY : %s -> %s" % (file_obj["path"], to_path))
                 else:
                     if file_obj["num_links"] > 1 and self.skip_hardlinks:
