@@ -262,9 +262,7 @@ def main() -> None:
         "Delete directory: %s/%s"
         % (parent_dir if parent_dir != "/" else "", test_dir_name)
     )
-    rc.fs.delete_tree(id_=test_dir["id"])
-    rc.fs.delete_tree(path=parent_dir + "/test-qwalk-copy")
-    rc.fs.delete_tree(path=parent_dir + "/copy-from-snap")
+    rc.tree_delete.create_job(test_dir["id"])
 
 
 if __name__ == "__main__":
