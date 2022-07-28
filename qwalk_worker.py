@@ -331,6 +331,23 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
             w.run()
         w.run_task.work_done(w)
 
+    def queue_files(self, process_list: List[str]) -> List[str]:
+        if len(process_list) > 0:
+            if USE_PICKLE:
+                filename_1 = "%s-%s.pkl" % (
+                    time.time(),
+                    random.random(),
+                )
+                with open(filename_1, "wb") as fw:
+                    pickle.dump(process_list, fw)
+                the_list_1: Union[str, List[str]] = filename_1
+            else:
+                the_list_1 = process_list
+            self.add_to_queue(
+                {"type": "process_list", "list": the_list_1}
+            )
+        return []
+
     @staticmethod
     def worker_main(  # pylint: disable=too-many-nested-blocks
         func: Callable[[ListDirArgs, "QWalkWorker"], Sequence[str]], ww: "QWalkWorker"
@@ -359,21 +376,11 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                     while len(file_list) > 0:
                         process_list.append(file_list.pop())
                         if len(process_list) >= BATCH_SIZE:
-                            if USE_PICKLE:
-                                filename_1 = "%s-%s.pkl" % (
-                                    time.time(),
-                                    random.random(),
-                                )
-                                with open(filename_1, "wb") as fw:
-                                    pickle.dump(process_list, fw)
-                                the_list_1: Union[str, List[str]] = filename_1
-                            else:
-                                the_list_1 = process_list
-                            ww.add_to_queue(
-                                {"type": "process_list", "list": the_list_1}
-                            )
-                            process_list = []
-                            # the_list_1 = None
+                            process_list = ww.queue_files(process_list)
+
+                    # Queue a partial batch if we have it
+                    process_list = ww.queue_files(process_list)
+
                 elif data["type"] == "process_list":
                     if USE_PICKLE:
                         # TODO: instead of USE_PICKLE, infer from list type?
