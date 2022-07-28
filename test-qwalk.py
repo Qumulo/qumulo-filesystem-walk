@@ -19,7 +19,7 @@ from qtasks.ModeBitsChecker import ModeBitsChecker
 from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
 from qumulo.rest_client import RestClient
-from qwalk_worker import Creds, log_it, QWalkWorker
+from qwalk_worker import Creds, log_it, QWalkWorker, REST_PORT
 
 LOG_FILE_NAME = "test-qwalk-log-file.txt"
 
@@ -66,11 +66,17 @@ def main() -> None:
         print("-" * 80)
         sys.exit(0)
 
+    host = args.s
+    port = REST_PORT
+    if host.count(':') == 1:
+        host, port = host.split(':')
+        port = int(port)
+
     # Everything will happen in a new subdirectory.
     test_dir_name = "test-qwalk"
-    creds: Creds = {"QHOST": args.s, "QUSER": args.u, "QPASS": args.p}
+    creds: Creds = {"QHOST": host, "QPORT": port, "QUSER": args.u, "QPASS": args.p}
     log_it("Log in to: %s" % (args.s))
-    rc = RestClient(creds["QHOST"], 8000)
+    rc = RestClient(creds["QHOST"], creds["QPORT"])
     rc.login(creds["QUSER"], creds["QPASS"])
     parent_dir = "/"
     if args.d != "/":

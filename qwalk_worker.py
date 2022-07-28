@@ -36,6 +36,7 @@ QTASKS: Mapping[str, Type[Task]] = {
 }
 
 
+REST_PORT = 8000
 USE_PICKLE = False
 MAX_QUEUE_LENGTH = 100000
 BATCH_SIZE = 100
@@ -88,6 +89,7 @@ class Creds(TypedDict):
     QHOST: str
     QUSER: str
     QPASS: str
+    QPORT: int
 
 
 class Counters(TypedDict):
@@ -182,7 +184,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def rc_get_ips(creds: Creds) -> Sequence[str]:
-        rc = RestClient(creds["QHOST"], 8000)
+        rc = RestClient(creds["QHOST"], creds.get("QPORT", REST_PORT))
         rc.login(creds["QUSER"], creds["QPASS"])
         ips = []
         for d in rc.network.list_network_status_v2(1):
@@ -192,7 +194,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
     def run(self) -> None:
         if not os.path.exists("old-queue.txt"):
             self.run_task.work_start(self)
-            rc = RestClient(self.creds["QHOST"], 8000)
+            rc = RestClient(self.creds["QHOST"], self.creds.get("QPORT", REST_PORT))
             rc.login(self.creds["QUSER"], self.creds["QPASS"])
             if self.snap:
                 d_attr = rc.fs.read_dir_aggregates(
@@ -337,7 +339,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         match = re.match(r".*?-([0-9])+", p_name)
         assert match, p_name
         ww.worker_id = int(match.group(1)) - 1
-        rc = RestClient(random.choice(ww.ips), 8000)
+        rc = RestClient(random.choice(ww.ips), ww.creds.get("QPORT", REST_PORT))
         rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
         client_start = time.time()
         ww.rc = rc
