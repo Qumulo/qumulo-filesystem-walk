@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import io
+import operator
 import os
 import re
 import sys
@@ -9,7 +10,7 @@ import sys
 os.environ["QWORKERS"] = "2"
 os.environ["QWAITSECONDS"] = "5"
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Dict
 
 from qtasks.ApplyAcls import ApplyAcls
 from qtasks.ChangeExtension import ChangeExtension
@@ -19,7 +20,7 @@ from qtasks.ModeBitsChecker import ModeBitsChecker
 from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
 from qumulo.rest_client import RestClient
-from qwalk_worker import Creds, log_it, QWalkWorker, REST_PORT
+from qwalk_worker import Creds, log_it, QWalkWorker, REST_PORT, BATCH_SIZE
 
 LOG_FILE_NAME = "test-qwalk-log-file.txt"
 
@@ -29,6 +30,25 @@ def read_full_tree_flat(rc: RestClient, path: str) -> Sequence[str]:
     for d in rc.fs.tree_walk_preorder(path=path):
         items.append(d["name"])
     return sorted(items)
+
+
+def assert_small_trees_are_identical(rc: RestClient, path1: str, path2: str):
+    def fetch_tree(path: str) -> Sequence[Dict]:
+        return sorted(list(rc.fs.tree_walk_preorder(path=path)), key=operator.itemgetter('name'))
+
+    tree1 = fetch_tree(path1)
+    tree2 = fetch_tree(path2)
+    assert len(tree1) == len(tree2), f'Trees are different sizes {len(tree1)} != {len(tree2)}'
+
+    ignore = ('file_number', 'id', 'path', 'access_time')
+    for left, right in zip(tree1, tree2):
+        for key in left:
+            if key in ignore:
+                continue
+            if left['path'] == path1 + '/':
+                # Don't compare the roots
+                continue
+            assert left[key] == right[key], f'{key}, {left} != {right}, {path1}, {path2}'
 
 
 def test_search(
@@ -89,6 +109,7 @@ def main() -> None:
     args.d = "%s/%s" % (parent_dir, "test-qwalk")
     flowers_dir = rc.fs.create_directory(dir_path=args.d, name="flowers")
     foods_dir = rc.fs.create_directory(dir_path=args.d, name="foods")
+    nums_dir = rc.fs.create_directory(dir_path=args.d, name="numbers")
 
     log_it("Create files")
     f = {}
@@ -104,10 +125,15 @@ def main() -> None:
     f["rice"] = rc.fs.create_file(dir_id=foods_dir["id"], name="rice.txt")
     f["sushi"] = rc.fs.create_file(dir_id=foods_dir["id"], name="寿.漢")
     f["sushi_test"] = rc.fs.create_file(dir_id=foods_dir["id"], name="寿.test")
+    for i in range(0, BATCH_SIZE + 25):
+        f[f"number-{i}"] = rc.fs.create_file(dir_id=nums_dir["id"], name=f"{i}.num")
+
     rc.fs.set_file_attr(id_=f["greenbeans"]["id"], mode="0000")
     log_it("Write data to files")
     f_size = 1
-    for _k, v in f.items():
+    for k, v in f.items():
+        if k.startswith('number'):
+            continue
         fw = io.BytesIO(b"0123456789" * f_size)
         fw.seek(0)
         rc.fs.write_file(data_file=fw, id_=v["id"])
@@ -127,6 +153,9 @@ def main() -> None:
     w.run()
     items = read_full_tree_flat(rc, parent_dir + "/test-qwalk-copy")
     log_it("Copy item count: %s" % len(items))
+    assert_small_trees_are_identical(
+        rc, parent_dir + "/test-qwalk", parent_dir + "/test-qwalk-copy"
+    )
 
     print("-" * 80)
     log_it("Test ApplyAcls")
