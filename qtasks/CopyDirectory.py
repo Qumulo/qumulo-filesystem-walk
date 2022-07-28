@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 
-from typing import Dict, Optional, Sequence
+from typing import Dict, Optional, Sequence, List
 
 from qumulo.rest_client import RestClient
 
@@ -83,6 +83,7 @@ class CopyDirectory:
         return self.folders[path]
 
     def every_batch(self, file_list: Sequence[FileInfo], work_obj: Worker) -> None:
+        requeue: List[FileInfo] = []
         results = []
         for file_obj in file_list:
             try:
@@ -96,19 +97,25 @@ class CopyDirectory:
                 if file_obj["type"] == "FS_FILE_TYPE_DIRECTORY":
                     self.create_folder(work_obj.rc, to_path)
 
-                    new_f = work_obj.rc.fs.get_file_attr(path=to_path)
-                    file_exists = new_f['id']
-
-                    o_attr = work_obj.rc.fs.get_file_attr(
-                        snapshot = work_obj.snap,
-                        id_ = file_obj["id"]
-                    )
-                    o_acl = work_obj.rc.fs.get_acl_v2(
-                        snapshot = work_obj.snap,
-                        id_ = file_obj["id"]
-                    )
-
                     if not self.no_preserve:
+                        new_f = work_obj.rc.fs.get_file_attr(path=to_path)
+                        file_exists = new_f['id']
+
+                        if new_f['child_count'] != file_obj['child_count']:
+                            # We can't apply directory attributes until all children have been
+                            # added since adding children updates timestamps
+                            requeue.append(file_obj)
+                            continue
+
+                        o_attr = work_obj.rc.fs.get_file_attr(
+                            snapshot = work_obj.snap,
+                            id_ = file_obj["id"]
+                        )
+                        o_acl = work_obj.rc.fs.get_acl_v2(
+                            snapshot = work_obj.snap,
+                            id_ = file_obj["id"]
+                        )
+
                         work_obj.rc.fs.set_file_attr(
                             id_ = file_exists,
                             owner=o_attr['owner'],
@@ -293,6 +300,12 @@ class CopyDirectory:
                     work_obj.action_count.value += len(results)
         except:
             log_it("Unable to save results exception: %s" % str(sys.exc_info()))
+
+        if len(requeue) > 0:
+            if work_obj.queue_len.value < 50:
+                # Add a slight delay so workers have time to add the necessary children
+                time.sleep(0.1)
+            work_obj.add_to_queue({"type": "process_list", "list": requeue})
 
     @staticmethod
     def work_start(work_obj: Worker) -> None:
