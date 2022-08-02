@@ -1,2 +1,2 @@
-qumulo_api~=4.1
+qumulo_api
 typing-extensions~=3.10
