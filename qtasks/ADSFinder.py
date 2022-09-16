@@ -20,8 +20,10 @@ class ADSFinder:
     def get_named_streams(self, file_obj: FileInfo, work_obj: Worker) -> Optional[str]:
         # use work_obj.rc.fs.list_named_streams()
         streams = work_obj.rc.fs.list_named_streams(path=file_obj['path'])
-        res = [(f['name'], f['size']) for f in streams]
-        result = ' '.join(['%s %s' % (r[0], r[1]) for r in res])
+        result = [(f['name'], f['size']) for f in streams]
+        # result = ' '.join(['%s %s' % (r[0], r[1]) for r in res])
+        if result:
+            print(result)
         return result
 
     def every_batch(  # pylint: disable=no-self-use
@@ -32,7 +34,8 @@ class ADSFinder:
         for file_obj in file_list:
             res = self.get_named_streams(file_obj, work_obj)
             if res:
-                mb_res.append('%s: %s' % (file_obj['path'], res))
+                for r in res:
+                    mb_res.append('%s: %s' % (file_obj['path'], r))
 
         with work_obj.result_file_lock:
             with io.open(ADSFinder.FILE_NAME, "a", encoding="utf8") as f:
