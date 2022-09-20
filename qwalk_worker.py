@@ -22,6 +22,7 @@ from qtasks.DataReductionTest import DataReductionTest
 from qtasks.ModeBitsChecker import ModeBitsChecker
 from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
+from qtasks.ADSFinder import ADSFinder
 from qumulo.lib.request import RequestError
 from qumulo.rest_client import RestClient
 
@@ -33,6 +34,7 @@ QTASKS: Mapping[str, Type[Task]] = {
     "SummarizeOwners": SummarizeOwners,
     "ApplyAcls": ApplyAcls,
     "CopyDirectory": CopyDirectory,
+    "ADSFinder": ADSFinder,
 }
 
 
