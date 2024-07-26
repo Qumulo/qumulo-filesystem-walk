@@ -23,6 +23,7 @@ def main() -> None:
     parser.add_argument("-d", help="Starting directory", required=True)
     parser.add_argument("-g", help="Run with filesystem changes", action="store_true")
     parser.add_argument("-l", help="Log file. Use 'None' to disable logging.", default=datetime.datetime.now().strftime("%Y%m%dT%H%M%S-") + "output-walk-log.txt")
+    parser.add_argument("-f", help="Force script to run on directly on a Qumulo node.", action="store_true")
     parser.add_argument(
         "-c",
         help="Class to run.",
@@ -39,6 +40,13 @@ def main() -> None:
         parser.print_help()
         print("-" * 80)
         sys.exit(0)
+
+    # Make sure we're not running directly on a Qumulo node
+    RunningOnNode=os.system("qq cluster_conf | jq -cr .cluster_name > " + os.devnull + " 2>&1 ")
+    if RunningOnNode == 0:
+        print("The qwalk command should not be executed direcly on a Qumulo node.")
+        if not args.f:
+            exit(1)
 
     # Prompt for password if one was not given by ENV or command entry
     if not args.p:
