@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import datetime
+import getpass
 import os
 import sys
 
@@ -17,7 +18,7 @@ def main() -> None:
         "-u", help="Qumulo API user", default=os.getenv("QUSER") or "admin"
     )
     parser.add_argument(
-        "-p", help="Qumulo API password", default=os.getenv("QPASS") or "admin"
+        "-p", help="Qumulo API password", default=os.getenv("QPASS")
     )
     parser.add_argument("-d", help="Starting directory", required=True)
     parser.add_argument("-g", help="Run with filesystem changes", action="store_true")
@@ -38,6 +39,10 @@ def main() -> None:
         parser.print_help()
         print("-" * 80)
         sys.exit(0)
+
+    # Prompt for password if one was not given by ENV or command entry
+    if not args.p:
+        args.p = getpass.getpass()
 
     # If the log parameter is set to "None" send logs to devNull
     if args.l == "None":
