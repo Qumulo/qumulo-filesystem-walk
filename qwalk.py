@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import argparse
+import datetime
 import os
 import sys
 
@@ -20,7 +21,7 @@ def main() -> None:
     )
     parser.add_argument("-d", help="Starting directory", required=True)
     parser.add_argument("-g", help="Run with filesystem changes", action="store_true")
-    parser.add_argument("-l", help="Log file", default="output-walk-log.txt")
+    parser.add_argument("-l", help="Log file. Use 'None' to disable logging.", default=datetime.datetime.now().strftime("%Y%m%dT%H%M%S-") + "output-walk-log.txt")
     parser.add_argument(
         "-c",
         help="Class to run.",
@@ -37,6 +38,10 @@ def main() -> None:
         parser.print_help()
         print("-" * 80)
         sys.exit(0)
+
+    # If the log parameter is set to "None" send logs to devNull
+    if args.l == "None":
+        args.l == os.devnull
 
     QWalkWorker.run_all(
         args.s,
