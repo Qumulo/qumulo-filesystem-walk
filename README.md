@@ -213,8 +213,7 @@ Set any of these variables at the command line:
 * Windows PowerShell: `$env:QBATCHSIZE=100`
 * Max/Linux: `export QBATCHSIZE=1000`
 
-**Easy guide based on Windows machine specs**
-Change only the QMAXLEN to the following variable depending on RAM available
+**Easy guide below based on Windows machine specs**
 * **QMAXLEN=10** if Windows has 8GB RAM
 * **QMAXLEN=100** if Windows has 16GB RAM
 * **QMAXLEN=1000** if Windows has 32GB RAM
