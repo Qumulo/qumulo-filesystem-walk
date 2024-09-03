@@ -13,7 +13,7 @@ Walk a Qumulo filesystem, perform actions with highly parallelized Python
 
 ## Recommended specs if running in a VM
 * 4vCPU minimum (8vCPU Recommended)
-* 8GB RAM miminum (16GB Recommended)
+* 8GB RAM minimum (16GB Recommended)
 
 ## How it works
 
