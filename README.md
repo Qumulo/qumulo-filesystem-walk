@@ -11,6 +11,9 @@ Walk a Qumulo filesystem, perform actions with highly parallelized Python
 * Qumulo API Python bindings `pip install -r requirements.txt`
 * Qumulo cluster software version >= 2.13.0 (though some features might work on older versions)
 
+## Recommended specs if running in a VM
+* 4vCPU minimum (8vCPU Recommended)
+* 8GB RAM minimum (16GB Recommended)
 
 ## How it works
 
@@ -199,15 +202,23 @@ This will copy all items within the specified start directory `-d` and within th
 * **QBATCHSIZE** - Batch size of files and directories processed by the qtask jobs (default: 100)
 * **QWORKERS** - Number of python worker processes in the worker pool (default: 10 windows)
 * **QWAITSECONDS** - How long to wait between command line updates (default: 10 seconds)
-* **QMAXLEN** - Max queue length for the workers (default: 100,000)
+* **QMAXLEN** - Max queue length for the workers (default: 10)
 * **QDEBUG** - More verbose debugging messages.  (default: None)
 * **QOVERRIDEIPS** - Specify a custom list of Qumulo cluster IPs to use as API 'servers' (default: None)
 * **QUSEPICKLE** - The most expiremental of the knobs. Use pickled _files_ to pass batches around (default: None)
 
 Set any of these variables at the command line:
 
-* Windows: `Set QBATCHSIZE=100`
+* Windows Command Prompt: `Set QBATCHSIZE=100`
+* Windows PowerShell: `$env:QBATCHSIZE=100`
 * Max/Linux: `export QBATCHSIZE=1000`
+
+**Easy guide below based on Windows machine specs**
+* **QMAXLEN=10** if Windows has 8GB RAM
+* **QMAXLEN=100** if Windows has 16GB RAM
+* **QMAXLEN=1000** if Windows has 32GB RAM
+* **QMAXLEN=10000** if Windows has 64GB RAM
+* **QMAXLEN=100000** if Windows has 64GB RAM and 12 cores
 
 
 ## Building qtask classes
