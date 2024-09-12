@@ -67,7 +67,7 @@ class Search:
                     line = "|".join(
                         [
                             # mypy insists "TypedDict key must be a string literal"
-                            file_obj[col] if col in file_obj else col  # type: ignore[misc]
+                            str(file_obj[col]) if col in file_obj else col  # type: ignore[misc]
                             for col in self.cols
                         ]
                     )
