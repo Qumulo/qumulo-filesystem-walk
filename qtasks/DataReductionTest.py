@@ -113,6 +113,10 @@ class DataReductionTest:
             work_obj.action_count.value += action_count
 
     @staticmethod
+    def minimum_queue_length() -> int:
+        return 10
+
+    @staticmethod
     def work_start(_work_obj: Worker) -> None:
         if os.path.exists(DataReductionTest.FILE_NAME):
             os.remove(DataReductionTest.FILE_NAME)

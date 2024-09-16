@@ -308,6 +308,10 @@ class CopyDirectory:
             work_obj.add_to_queue({"type": "process_list", "list": requeue})
 
     @staticmethod
+    def minimum_queue_length() -> int:
+        return 100000
+
+    @staticmethod
     def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)

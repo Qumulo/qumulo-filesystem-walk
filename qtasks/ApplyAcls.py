@@ -79,6 +79,10 @@ class ApplyAcls:
                 work_obj.action_count.value += action_count
 
     @staticmethod
+    def minimum_queue_length() -> int:
+        return 10
+
+    @staticmethod
     def work_start(work_obj: Worker) -> None:
         if os.path.exists(work_obj.LOG_FILE_NAME):
             os.remove(work_obj.LOG_FILE_NAME)

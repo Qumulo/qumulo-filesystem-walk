@@ -54,6 +54,10 @@ class Task(Protocol):  # pylint: disable=super-init-not-called
         ...
 
     @staticmethod
+    def minimum_queue_length() -> int:
+        ...
+
+    @staticmethod
     def work_start(_work_obj: Worker) -> None:
         ...
 

@@ -164,10 +164,13 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         self.MAKE_CHANGES = make_changes
         self.LOG_FILE_NAME = log_file
         self.start_path = "/" if start_path == "/" else re.sub("/$", "", start_path)
+
         self.queue: multiprocessing.Queue[  # pylint: disable=unsubscriptable-object
             Union[ProcessListArgs, ListDirArgs]
         ] = multiprocessing.Queue()
         self.queue_lock = multiprocessing.Lock()
+        self.maximum_queue_length = max(MAX_QUEUE_LENGTH, run_task.minimum_queue_length())
+
         self.count_lock = multiprocessing.Lock()
         self.write_file_lock = multiprocessing.Lock()
         self.result_file_lock = multiprocessing.Lock()
@@ -218,7 +221,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                 last_time = time.time()
                 for line in fr:
                     # back off because we have a lot of directories now
-                    while self.queue_len.value > MAX_QUEUE_LENGTH:
+                    while self.queue_len.value > self.maximum_queue_length:
                         if time.time() - last_time >= WAIT_SECONDS:
                             self.print_status()
                             last_time = time.time()
@@ -462,7 +465,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                 for dd in res["files"]:
                     dd["dir_id"] = d["path_id"]
                     if dd["type"] == "FS_FILE_TYPE_DIRECTORY":
-                        if ww.queue_len.value > MAX_QUEUE_LENGTH:
+                        if ww.queue_len.value > ww.maximum_queue_length:
                             leftovers.append(dd["id"])
                         else:
                             ww.add_to_queue(
