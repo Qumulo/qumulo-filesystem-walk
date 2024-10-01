@@ -132,3 +132,9 @@ output*.txt
 output*.parq
 
 test-qwalk-log-file.txt
+
+# PyCharm
+.idea/
+
+# Logfiles
+*.txt
