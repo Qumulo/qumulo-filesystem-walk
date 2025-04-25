@@ -377,7 +377,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                 if data["type"] == "list_dir":
                     file_list += func(data, ww)
                     while len(file_list) > 0:
-                        process_list.append(file_list.pop())
+                        process_list.append(file_list.pop(0))
                         if len(process_list) >= BATCH_SIZE:
                             process_list = ww.queue_files(process_list)
 
@@ -485,7 +485,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                 if len(file_list) >= BATCH_SIZE:
                     process_list = []
                     while len(file_list) > 0:
-                        process_list.append(file_list.pop())
+                        process_list.append(file_list.pop(0))
                         if len(process_list) >= BATCH_SIZE or len(file_list) == 0:
                             if USE_PICKLE:
                                 filename = "%s-%s.pkl" % (time.time(), random.random())
