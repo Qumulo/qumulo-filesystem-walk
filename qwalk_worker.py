@@ -24,6 +24,7 @@ from qtasks.Search import Search
 from qtasks.SummarizeOwners import SummarizeOwners
 from qumulo.lib.request import RequestError
 from qumulo.rest_client import RestClient
+from qumulo.lib.auth import Credentials
 
 QTASKS: Mapping[str, Type[Task]] = {
     "ChangeExtension": ChangeExtension,
@@ -89,6 +90,7 @@ class Creds(TypedDict):
     QHOST: str
     QUSER: str
     QPASS: str
+    QTOKEN: str
     QPORT: int
 
 
@@ -187,8 +189,13 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def rc_get_ips(creds: Creds) -> Sequence[str]:
-        rc = RestClient(creds["QHOST"], creds.get("QPORT", REST_PORT))
-        rc.login(creds["QUSER"], creds["QPASS"])
+        if creds["QTOKEN"]:
+            rc = RestClient(
+                    creds["QHOST"], creds.get("QPORT", REST_PORT), Credentials(creds["QTOKEN"])
+                )
+        else:
+            rc = RestClient(creds["QHOST"], creds.get("QPORT", REST_PORT))
+            rc.login(creds["QUSER"], creds["QPASS"])
         ips = []
         for d in rc.network.list_network_status_v2(1):
             ips.append(d["network_statuses"][0]["address"])
@@ -197,8 +204,14 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
     def run(self) -> None:
         if not os.path.exists("old-queue.txt"):
             self.run_task.work_start(self)
-            rc = RestClient(self.creds["QHOST"], self.creds.get("QPORT", REST_PORT))
-            rc.login(self.creds["QUSER"], self.creds["QPASS"])
+            if self.creds["QTOKEN"]:
+                rc = RestClient(
+                    self.creds["QHOST"], self.creds.get("QPORT", REST_PORT), Credentials(self.creds["QTOKEN"])
+                    )
+            else:
+                rc = RestClient(self.creds["QHOST"], self.creds.get("QPORT", REST_PORT))
+                rc.login(self.creds["QUSER"], self.creds["QPASS"])
+            
             if self.snap:
                 d_attr = rc.fs.read_dir_aggregates(
                     path=self.start_path, snapshot=self.snap, max_entries=0
@@ -299,6 +312,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         hostname: str,
         username: str,
         password: str,
+        access_token: str,
         start_dir: str,
         make_changes: bool,
         log_file: str,
@@ -309,7 +323,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         run_class = QTASKS[run_class_name]
         run_task = run_class(other_args)
         w = QWalkWorker(
-            {"QHOST": hostname, "QUSER": username, "QPASS": password},
+            {"QHOST": hostname, "QUSER": username, "QPASS": password, "QTOKEN": access_token},
             run_task,
             start_dir,
             snapshot_id,
@@ -323,7 +337,7 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
             counters = w.get_counters()
             del w
             w = QWalkWorker(
-                {"QHOST": hostname, "QUSER": username, "QPASS": password},
+                {"QHOST": hostname, "QUSER": username, "QPASS": password, "QTOKEN": access_token},
                 run_task,
                 start_dir,
                 snapshot_id,
@@ -359,8 +373,13 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         match = re.match(r".*?-([0-9])+", p_name)
         assert match, p_name
         ww.worker_id = int(match.group(1)) - 1
-        rc = RestClient(random.choice(ww.ips), ww.creds.get("QPORT", REST_PORT))
-        rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+        if ww.creds["QTOKEN"]:
+            rc = RestClient(
+                    random.choice(ww.ips), ww.creds.get("QPORT", REST_PORT), Credentials(ww.creds["QTOKEN"])
+                )
+        else:
+            rc = RestClient(random.choice(ww.ips), ww.creds.get("QPORT", REST_PORT))
+            rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
         client_start = time.time()
         ww.rc = rc
         file_list: List[str] = []
@@ -370,8 +389,11 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
         while True:
             if time.time() - client_start > 60 * 60:
                 # re-initialize rest client every hour
-                ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
-                # log_it("re-initialized Qumulo rest client for worker")
+                if ww.creds["QTOKEN"]:
+                    ww.rc = RestClient(random.choice(ww.ips), ww.ww.creds.get("QPORT", REST_PORT), Credentials(ww.creds["QTOKEN"]))
+                else:
+                    ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+                    # log_it("re-initialized Qumulo rest client for worker")
             try:
                 data = ww.queue.get(True, timeout=5)
                 if data["type"] == "list_dir":
@@ -455,7 +477,10 @@ class QWalkWorker:  # pylint: disable=too-many-instance-attributes
                     time.sleep(5)
                     log_it("HTTP API error: %s" % re.sub(r"[\r\n]+", " ", str(e))[:100])
                     log_it("id: %s - next_uri: %s" % (d["path_id"], next_uri))
-                    ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
+                    if ww.creds["QTOKEN"]:
+                        ww.rc = RestClient(random.choice(ww.ips), ww.ww.creds.get("QPORT", REST_PORT), Credentials(ww.creds["QTOKEN"]))
+                    else:
+                        ww.rc.login(ww.creds["QUSER"], ww.creds["QPASS"])
                 continue
             except:
                 log_exception("UNHANDLED EXCEPTION! - Stop reading directory")
