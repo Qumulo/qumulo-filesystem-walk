@@ -16,7 +16,10 @@ def main() -> None:
         "-u", help="Qumulo API user", default=os.getenv("QUSER") or "admin"
     )
     parser.add_argument(
-        "-p", help="Qumulo API password", default=os.getenv("QPASS") or "admin"
+        "-p", help="Qumulo API password", default=os.getenv("QPASS") or "'Admin123'"
+    )
+    parser.add_argument(
+        "-a", help="Qumulo access token", default=os.getenv("QTOKEN")
     )
     parser.add_argument("-d", help="Starting directory", required=True)
     parser.add_argument("-g", help="Run with filesystem changes", action="store_true")
@@ -42,6 +45,7 @@ def main() -> None:
         args.s,
         args.u,
         args.p,
+        args.a,
         args.d,
         args.g,
         args.l,
